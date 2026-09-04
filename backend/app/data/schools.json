@@ -1,0 +1,85 @@
+{
+  "_comment": "Seed data only — 5 fictional schools shaped like real MOE P1 listings, for demo/dev. Replace with curated real data (school SEN pages + MOE P1 registration exercise historical results) before using this for real recommendations.",
+  "schools": [
+    {
+      "id": "riverside_ps",
+      "name": "Riverside Primary School",
+      "lat": 1.3521,
+      "lng": 103.8198,
+      "sen_support": {
+        "learning_support_programme": true,
+        "allied_educators_learning_behavioural": 3,
+        "dyslexia_specific_resourcing": true,
+        "notes": "Dedicated quiet room for sensory breaks; staff trained in structured routines for autism spectrum students."
+      },
+      "cca": ["rock climbing", "robotics", "choir", "track and field"],
+      "historical_admissions": {
+        "2C": {"2024": {"vacancies": 45, "applicants": 61}, "2025": {"vacancies": 40, "applicants": 58}}
+      }
+    },
+    {
+      "id": "hillcrest_ps",
+      "name": "Hillcrest Primary School",
+      "lat": 1.3644,
+      "lng": 103.8306,
+      "sen_support": {
+        "learning_support_programme": true,
+        "allied_educators_learning_behavioural": 1,
+        "dyslexia_specific_resourcing": false,
+        "notes": "General inclusive classroom model; no dedicated sensory room reported."
+      },
+      "cca": ["swimming", "robotics", "art club", "chess"],
+      "historical_admissions": {
+        "2C": {"2024": {"vacancies": 20, "applicants": 52}, "2025": {"vacancies": 18, "applicants": 49}}
+      }
+    },
+    {
+      "id": "maple_grove_ps",
+      "name": "Maple Grove Primary School",
+      "lat": 1.3399,
+      "lng": 103.8078,
+      "sen_support": {
+        "learning_support_programme": true,
+        "allied_educators_learning_behavioural": 4,
+        "dyslexia_specific_resourcing": true,
+        "notes": "Predictable visual-schedule system used school-wide; noise-reduced classroom option available on request."
+      },
+      "cca": ["climbing wall", "coding club", "orchestra"],
+      "historical_admissions": {
+        "2C": {"2024": {"vacancies": 55, "applicants": 50}, "2025": {"vacancies": 50, "applicants": 47}}
+      }
+    },
+    {
+      "id": "orchid_park_ps",
+      "name": "Orchid Park Primary School",
+      "lat": 1.3805,
+      "lng": 103.8450,
+      "sen_support": {
+        "learning_support_programme": false,
+        "allied_educators_learning_behavioural": 0,
+        "dyslexia_specific_resourcing": false,
+        "notes": "No structured SEN programme reported as of last review."
+      },
+      "cca": ["football", "dance", "debate"],
+      "historical_admissions": {
+        "2C": {"2024": {"vacancies": 30, "applicants": 22}, "2025": {"vacancies": 28, "applicants": 20}}
+      }
+    },
+    {
+      "id": "brightpath_ps",
+      "name": "Brightpath Primary School",
+      "lat": 1.3292,
+      "lng": 103.7764,
+      "sen_support": {
+        "learning_support_programme": true,
+        "allied_educators_learning_behavioural": 2,
+        "dyslexia_specific_resourcing": true,
+        "notes": "Social skills group run weekly; buddy-system for transitions between activities."
+      },
+      "cca": ["climbing", "badminton", "science club"],
+      "historical_admissions": {
+        "2C": {"2024": {"vacancies": 15, "applicants": 33}, "2025": {"vacancies": 14, "applicants": 30}}
+      }
+    }
+  ]
+}
