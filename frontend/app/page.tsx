@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { Fraunces } from "next/font/google";
 import styles from "./page.module.css";
 import type {
   Catalogue, ComparisonCell, ComparisonRequest, ComparisonResponse, EvidenceStatus,
@@ -8,6 +9,8 @@ import type {
 } from "./comparison-types";
 
 type Importance = "not_needed" | Priority;
+
+const fraunces = Fraunces({ subsets: ["latin"], weight: ["600", "700"], variable: "--font-fraunces", display: "swap" });
 
 const STATUS: Record<EvidenceStatus, string> = {
   supported: "Supported by your information", not_met: "Requirement not met",
@@ -296,7 +299,7 @@ export default function HomePage() {
   const canSubmit = !busy && requirements.length > 0 && schoolNames[0].trim() !== "" && schoolNames[1].trim() !== "" && !duplicateSchoolNames;
   const missedMustHaves = comparison?.rows.filter((row) => row.requirement.priority === "must_have" && row.cells.some((cell) => cell.status === "not_met")) ?? [];
 
-  return <div className={`${styles.page} ${editing ? styles.pageWithBar : ""}`}>
+  return <div className={`${styles.page} ${fraunces.variable} ${editing ? styles.pageWithBar : ""}`}>
     <header className={styles.header}>
       <a href="/" className={styles.brand}>School-Fit Copilot</a>
       <nav className={styles.nav} aria-label="Main navigation">
@@ -401,7 +404,7 @@ export default function HomePage() {
       </div>}
 
       <div className={styles.assessmentGrid}>
-        {comparison.assessments.map((assessment, index) => <article className={`${styles.assessmentCard} ${assessment.state === "unmet_requirement" ? styles.assessmentUnmet : assessment.state === "requirements_supported" ? styles.assessmentSupported : ""}`} key={assessment.school_id}>
+        {comparison.assessments.map((assessment, index) => <article className={`${styles.assessmentCard} ${assessment.state === "unmet_requirement" ? styles.assessmentUnmet : assessment.state === "requirements_supported" ? styles.assessmentSupported : ""}`} style={{ animationDelay: `${index * 70}ms` }} key={assessment.school_id}>
           <p className={styles.assessmentEyebrow}>School {index === 0 ? "A" : "B"} · live research</p>
           <h3>{comparison.schools.find((s) => s.school_id === assessment.school_id)?.school_name}</h3>
           <span className={`${styles.badge} ${styles[ASSESSMENT_BADGE[assessment.state]]}`}>{ASSESSMENT[assessment.state]}</span>
@@ -424,7 +427,7 @@ export default function HomePage() {
       />}
 
       <h2 className={styles.srOnly}>What the evidence tells you</h2>
-      {comparison.rows.map((row) => <div className={styles.topicResult} key={row.requirement.id}>
+      {comparison.rows.map((row, index) => <div className={styles.topicResult} style={{ animationDelay: `${140 + index * 70}ms` }} key={row.requirement.id}>
         <div className={styles.topicResultHead}>
           <p className={styles.topicResultTitle}>{row.label}</p>
           <p className={styles.topicResultMeta}>
