@@ -42,6 +42,7 @@ export interface Observation {
 }
 export interface ComparisonRequest {
   school_ids: [string, string];
+  school_names?: [string, string];
   context: string;
   requirements: Requirement[];
   observations: Observation[];

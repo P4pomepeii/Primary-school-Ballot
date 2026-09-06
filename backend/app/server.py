@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from .compare import compare_schools, get_catalogue
 from .comparison_schema import CatalogueResponse, ComparisonRequest, ComparisonResponse, Observation, Requirement
 from .graph import run
+from .live_research import LiveResearchError, research_schools
 from .schema import SchoolFitResult
 
 app = FastAPI(title="School-Fit Copilot")
@@ -93,7 +94,13 @@ def schools() -> CatalogueResponse:
 
 @comparison_routes.post("/compare", response_model=ComparisonResponse)
 def compare(req: ComparisonRequest) -> ComparisonResponse:
-    return compare_schools(req)
+    if req.school_names is None:
+        return compare_schools(req)
+    try:
+        live_evidence = research_schools(req)
+    except LiveResearchError as exc:
+        return JSONResponse(status_code=503, content={"error": str(exc)})
+    return compare_schools(req, live_evidence=live_evidence)
 
 
 app.include_router(comparison_routes)

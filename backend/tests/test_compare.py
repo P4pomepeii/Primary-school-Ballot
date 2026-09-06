@@ -7,7 +7,7 @@ from pydantic import ValidationError
 
 from app import comparison_schema
 from app.compare import compare_schools, get_catalogue
-from app.comparison_schema import ComparisonRequest, ComparisonResponse
+from app.comparison_schema import ComparisonRequest, ComparisonResponse, Evidence
 from app.server import app
 
 FIRST, SECOND = "riverside_ps", "hillcrest_ps"
@@ -374,3 +374,55 @@ def test_invoke_full_graph_smoke_is_preserved(client, monkeypatch):
     assert response.json()["results"]
     assert all(result["fit_summary"] for result in response.json()["results"])
     assert client.get("/health").json() == {"status": "ok"}
+
+
+def real_payload(**changes):
+    return {
+        "school_ids": ["school-1-tao-nan", "school-2-nanyang"],
+        "school_names": ["Tao Nan School", "Nanyang Primary School"],
+        "context": "We need a specific support arrangement.",
+        "requirements": [requirement(id="quiet-space", details="A quiet space during the school day")],
+        "observations": [],
+        **changes,
+    }
+
+
+def test_real_school_names_skip_fictional_seed_evidence():
+    request = ComparisonRequest.model_validate(real_payload())
+    live = {(
+        "school-1-tao-nan", "quiet-space",
+    ): [Evidence(
+        id="live:source", source_type="published_information", source_label="Live web research via OpenRouter — School page",
+        source_url="https://example.com/tao-nan", observed_on="2026-09-06",
+        summary="The source describes the relevant arrangement.", outcome="supports",
+        commute_minutes=None, is_demo=False,
+    )]}
+    result = compare_schools(request, live_evidence=live)
+    assert [school.school_name for school in result.schools] == ["Tao Nan School", "Nanyang Primary School"]
+    assert all(school.is_demo is False for school in result.schools)
+    assert result.rows[0].cells[0].status == "supported"
+    assert result.rows[0].cells[1].status == "unknown"
+    assert all(evidence.is_demo is False for row in result.rows for cell in row.cells for evidence in cell.evidence)
+    assert "live web research" in result.notice.lower()
+
+
+def test_real_school_api_uses_research_pass(client, monkeypatch):
+    request = ComparisonRequest.model_validate(real_payload())
+    evidence = Evidence(
+        id="live:source", source_type="published_information", source_label="Live web research — School page",
+        source_url="https://example.com/tao-nan", observed_on="2026-09-06",
+        summary="The source describes the arrangement.", outcome="supports",
+        commute_minutes=None, is_demo=False,
+    )
+    called = []
+
+    def fake_research(received):
+        called.append(received.school_names)
+        return {("school-1-tao-nan", "quiet-space"): [evidence]}
+
+    monkeypatch.setattr("app.server.research_schools", fake_research)
+    response = client.post("/compare", json=real_payload())
+    assert response.status_code == 200
+    assert called == [["Tao Nan School", "Nanyang Primary School"]]
+    assert response.json()["rows"][0]["cells"][0]["status"] == "supported"
+    assert response.json()["rows"][0]["cells"][0]["evidence"][0]["source_url"] == "https://example.com/tao-nan"

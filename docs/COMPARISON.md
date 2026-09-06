@@ -1,20 +1,23 @@
 # Two-school comparison
 
-The main workflow helps a family investigate two schools it is already considering.
+The main workflow helps a family investigate two real schools it is already considering.
 It complements the original discovery prototype, which remains at `/discover`.
-The comparison is deterministic and makes no LLM calls, regardless of `MODEL_PROVIDER`.
+The comparison uses one bounded OpenRouter web-research request, then applies the
+requirement logic deterministically. The discovery prototype remains separate.
 
 ## Workflow
 
-1. Fetch `/schools` for the fictional school catalogue and available requirement topics.
-2. Select two distinct schools, a deciding concern and one or more requirements.
-3. Submit `/compare` with the selected schools, requirements and recorded observations.
+1. Fetch `/schools` for available requirement topics.
+2. Enter two distinct school names, a deciding concern and one or more requirements.
+3. Submit `/compare` with stable client ids, school names, requirements and recorded observations.
 4. Review evidence, individual must-have assessments and follow-up questions.
 5. Record a response or observation, resubmit, and review the changed statuses.
 
 The frontend uses `/api/schools` and `/api/compare`; Next.js proxies to the backend
 with a timeout and no caching. Notes remain in page memory. The backend does not
-save requests. Source URLs are references only, never fetched.
+save requests. OpenRouter fetches current web results through its `openrouter:web_search`
+server tool; the backend only validates source URLs returned by the model and does
+not fetch those URLs itself.
 
 ## Evidence rules
 
@@ -25,6 +28,7 @@ save requests. Source URLs are references only, never fetched.
 | School response recorded by the parent | Yes | Recorded by parent, not independently verified |
 | Published information added by the parent | Yes | Requires an HTTP/S source link; not independently verified |
 | Family's own observation | Yes | Parent-recorded observation |
+| Live web research | Yes, when a source directly addresses the requirement | Source lead retrieved via OpenRouter; verify with the school |
 
 The user supplies an explicit assessment: `supports`, `does_not_support` or
 `unclear`. The system does not infer a definitive conclusion from prose.
@@ -58,7 +62,8 @@ and ask for clarification of conflicts or alternatives for unmet requirements.
 
 ```json
 {
-  "school_ids": ["riverside_ps", "maple_grove_ps"],
+  "school_ids": ["school-1-tao-nan", "school-2-nanyang"],
+  "school_names": ["Tao Nan School", "Nanyang Primary School"],
   "context": "We need a quiet space our child can access when overwhelmed.",
   "requirements": [
     {
@@ -74,18 +79,19 @@ and ask for clarification of conflicts or alternatives for unmet requirements.
 ```
 
 The response includes `schools`, `rows` (one cell per school per requirement),
-`assessments`, `questions`, `context` and `notice`. With only demo evidence, all
-cells are unknown. The complete schema is at `/docs` or `/openapi.json` on the backend.
+`assessments`, `questions`, `context` and `notice`. When no useful live source is
+found, the cell is unknown. The complete schema is at `/docs` or `/openapi.json` on
+the backend.
 
 To record information, resubmit the request with an entry in `observations`:
 
 ```json
 {
   "id": "note-1",
-  "school_id": "riverside_ps",
+  "school_id": "school-1-tao-nan",
   "requirement_id": "quiet-space",
   "source_type": "school_response",
-  "source_label": "Fictional open-house response used to test the workflow",
+  "source_label": "School office response",
   "source_url": null,
   "observed_on": "2026-09-01",
   "summary": "Example only: staff described how a child can request a sensory break.",
@@ -108,8 +114,12 @@ The UI discloses exclusions before submitting edits.
 
 ## Extending the evidence base
 
-The seed loader deliberately marks every catalogue entry as fictional. A real-data
-integration should supply school identifiers and dated source records with explicit
-provenance. Programme names or educator counts alone must not be treated as proof
-that a child's particular arrangement is available. Preserve the distinction
-between a published policy, an individual account and a confirmed arrangement.
+The original seed loader is retained only for the discovery demo. The comparison
+workflow accepts school names and researches them at request time. Programme names
+or educator counts alone must not be treated as proof that a child's particular
+arrangement is available. Preserve the distinction between a published policy, an
+individual account, a live research lead and a confirmed arrangement.
+
+Live research is intentionally bounded to one request, at most three results per
+search and eight total search results. Set `OPENROUTER_API_KEY` and optionally
+`OPENROUTER_MODEL` in the backend environment; never commit either value.

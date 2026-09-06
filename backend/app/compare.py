@@ -1,4 +1,4 @@
-"""Deterministic comparison of parent-recorded evidence; no model calls or ranking."""
+"""Evidence comparison and follow-up questions, with no ranking or score."""
 from __future__ import annotations
 
 from .comparison_schema import (
@@ -12,6 +12,13 @@ NOTICE = (
     "Evidence you enter is recorded by parent, not independently verified. "
     "Demo snippets and parent experiences provide context only and cannot satisfy requirements. "
     "This comparison does not rank schools or estimate personal admission odds."
+)
+LIVE_NOTICE = (
+    "Live web research was retrieved for these school names through OpenRouter. "
+    "Sources and summaries are research leads, not independently verified facts; "
+    "confirm important arrangements with the school. Parent-entered evidence is "
+    "also recorded by parent, not independently verified. This comparison does "
+    "not rank schools or estimate personal admission odds."
 )
 _TOPICS = [
     CatalogueTopic(
@@ -59,13 +66,17 @@ _TOPIC_BY_ID = {topic.id: topic for topic in _TOPICS}
 _DIRECT_SOURCES = {"school_response", "published_information", "family_observation"}
 
 
-def _school(school_id: str) -> CatalogueSchool:
+def _school(request: ComparisonRequest, school_id: str) -> CatalogueSchool:
+    if request.school_names is not None:
+        index = request.school_ids.index(school_id)
+        return CatalogueSchool(school_id=school_id, school_name=request.school_names[index], is_demo=False)
     return CatalogueSchool(school_id=school_id, school_name=_seed_schools()[school_id]["name"])
 
 
 def get_catalogue() -> CatalogueResponse:
     return CatalogueResponse(
-        schools=[_school(school_id) for school_id in _seed_schools()],
+        schools=[CatalogueSchool(school_id=school_id, school_name=_seed_schools()[school_id]["name"])
+                 for school_id in _seed_schools()],
         topics=[topic.model_copy() for topic in _TOPICS], notice=NOTICE,
     )
 
@@ -96,7 +107,12 @@ def _outcome(observation: Observation, requirement: Requirement) -> Outcome:
     return "supports" if observation.commute_minutes <= requirement.max_minutes else "does_not_support"
 
 
-def _cell(request: ComparisonRequest, requirement: Requirement, school_id: str) -> ComparisonCell:
+def _cell(
+    request: ComparisonRequest,
+    requirement: Requirement,
+    school_id: str,
+    live_evidence: dict[tuple[str, str], list[Evidence]] | None = None,
+) -> ComparisonCell:
     evidence = []
     direct_outcomes = set()
     for observation in request.observations:
@@ -112,7 +128,15 @@ def _cell(request: ComparisonRequest, requirement: Requirement, school_id: str) 
         ))
         if observation.source_type in _DIRECT_SOURCES:
             direct_outcomes.add(outcome)
-    evidence.extend(_demo_evidence(school_id, requirement))
+    if live_evidence is not None:
+        live_sources = live_evidence.get((school_id, requirement.id), [])
+        evidence.extend(live_sources)
+        direct_outcomes.update(
+            source.outcome for source in live_sources
+            if source.source_type in _DIRECT_SOURCES
+        )
+    else:
+        evidence.extend(_demo_evidence(school_id, requirement))
 
     if {"supports", "does_not_support"} <= direct_outcomes:
         status = "conflicting"
@@ -131,7 +155,13 @@ def _cell(request: ComparisonRequest, requirement: Requirement, school_id: str) 
             f" Measured journeys of {requirement.max_minutes:g} minutes or less support the limit; "
             "longer journeys do not. A missing measurement is unknown, regardless of the entered outcome."
         )
-    explanation += " Parent-entered evidence is recorded by parent, not independently verified."
+    explanation += (
+        " Live research is a source lead to verify with the school."
+        if live_evidence is not None
+        else " Parent-entered evidence is recorded by parent, not independently verified."
+    )
+    if live_evidence is not None and not evidence:
+        explanation = "Live research did not find a sufficiently specific source for this requirement. Ask the school directly."
     return ComparisonCell(school_id=school_id, status=status, explanation=explanation, evidence=evidence)
 
 
@@ -186,14 +216,17 @@ def _questions(rows: list[ComparisonRow]) -> list[FollowUpQuestion]:
     return questions
 
 
-def compare_schools(request: ComparisonRequest) -> ComparisonResponse:
+def compare_schools(
+    request: ComparisonRequest,
+    live_evidence: dict[tuple[str, str], list[Evidence]] | None = None,
+) -> ComparisonResponse:
     rows = [ComparisonRow(
         requirement=requirement, label=_TOPIC_BY_ID[requirement.topic].label,
-        cells=[_cell(request, requirement, school_id) for school_id in request.school_ids],
+        cells=[_cell(request, requirement, school_id, live_evidence) for school_id in request.school_ids],
     ) for requirement in request.requirements]
     return ComparisonResponse(
-        notice=NOTICE, context=request.context,
-        schools=[_school(school_id) for school_id in request.school_ids], rows=rows,
+        notice=LIVE_NOTICE if live_evidence is not None else NOTICE, context=request.context,
+        schools=[_school(request, school_id) for school_id in request.school_ids], rows=rows,
         assessments=[_assessment(school_id, index, rows) for index, school_id in enumerate(request.school_ids)],
         questions=_questions(rows),
     )

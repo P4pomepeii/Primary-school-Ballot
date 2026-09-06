@@ -43,10 +43,15 @@ function dateLabel(value: string) {
   return new Intl.DateTimeFormat("en-SG", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${value}T00:00:00Z`));
 }
 
+function schoolIdFor(name: string, index: number) {
+  const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
+  return `school-${index + 1}-${slug}`;
+}
+
 async function getComparison(request: ComparisonRequest): Promise<ComparisonResponse> {
   const res = await fetch("/api/compare", {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request), signal: AbortSignal.timeout(20000),
+    body: JSON.stringify(request), signal: AbortSignal.timeout(75000),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error ?? "We couldn’t update this comparison. Please try again.");
@@ -71,13 +76,13 @@ function EvidenceCell({ cell, busy, onAdd, onRemove }: {
     {cell.evidence.length > 0 && <details className="sources">
       <summary>View sources ({cell.evidence.length})</summary>
       {cell.evidence.map((evidence) => <div className="source" key={evidence.id}>
-        <div className="source-kind">{SOURCE[evidence.source_type]}</div>
+        <div className="source-kind">{evidence.id.startsWith("live:") ? "Live web research · source lead" : SOURCE[evidence.source_type]}</div>
         <small>{evidence.source_label} · {evidence.observed_on ? dateLabel(evidence.observed_on) : "No verification date"}</small>
         <p>{evidence.summary}</p>
         {!evidence.is_demo && <p className="help">{evidence.commute_minutes != null ? "Journey assessment" : "Your assessment"}: {OUTCOME[evidence.outcome]}</p>}
         {evidence.commute_minutes != null && <p>{evidence.commute_minutes} minutes recorded</p>}
         {evidence.source_url && <p><a href={evidence.source_url} target="_blank" rel="noopener noreferrer">Open source ↗</a></p>}
-        {!evidence.is_demo && <button type="button" className="text-button danger" disabled={busy} onClick={() => onRemove(evidence.id)}>Remove this note</button>}
+        {!evidence.is_demo && !evidence.id.startsWith("live:") && <button type="button" className="text-button danger" disabled={busy} onClick={() => onRemove(evidence.id)}>Remove this note</button>}
       </div>)}
     </details>}
     <button type="button" className="text-button" disabled={busy} onClick={onAdd}>+ Record what you learned</button>
@@ -170,6 +175,7 @@ export default function HomePage() {
   const [catalogueError, setCatalogueError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
   const [schoolIds, setSchoolIds] = useState<[string, string]>(["", ""]);
+  const [schoolNames, setSchoolNames] = useState<[string, string]>(["", ""]);
   const [context, setContext] = useState("");
   const [requirements, setRequirements] = useState<Requirement[]>(defaultRequirements);
   const [comparison, setComparison] = useState<ComparisonResponse | null>(null);
@@ -193,7 +199,6 @@ export default function HomePage() {
         if (!response.ok) throw new Error(data.error ?? "We couldn’t load the schools.");
         if (!disposed) {
           setCatalogue(data);
-          setSchoolIds((current) => current[0] ? current : [data.schools[0]?.school_id ?? "", data.schools[2]?.school_id ?? data.schools[1]?.school_id ?? ""]);
         }
       } catch (err) {
         if (!disposed) setCatalogueError(err instanceof Error && err.name !== "AbortError" ? err.message : "Loading the schools took too long. Please try again.");
@@ -221,11 +226,13 @@ export default function HomePage() {
   }
   async function submitComparison(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy || schoolIds[0] === schoolIds[1] || !requirements.length) return;
+    const names = schoolNames.map((name) => name.trim()) as [string, string];
+    const ids = names.map((name, index) => schoolIdFor(name, index)) as [string, string];
+    if (busy || names[0].toLowerCase() === names[1].toLowerCase() || !requirements.length) return;
     setBusy(true); setError(null);
     const request: ComparisonRequest = {
-      school_ids: schoolIds, context: context.trim(), requirements,
-      observations: (activeRequest?.observations ?? []).filter((note) => schoolIds.includes(note.school_id) && requirements.some((r) => r.id === note.requirement_id)),
+      school_ids: ids, school_names: names, context: context.trim(), requirements,
+      observations: (activeRequest?.observations ?? []).filter((note) => ids.includes(note.school_id) && requirements.some((r) => r.id === note.requirement_id)),
     };
     try {
       const result = await getComparison(request);
@@ -235,7 +242,8 @@ export default function HomePage() {
   }
   function beginEdit() {
     if (!activeRequest) return;
-    setSchoolIds(activeRequest.school_ids); setContext(activeRequest.context); setRequirements(activeRequest.requirements);
+    const names = activeRequest.school_names ?? activeRequest.school_ids;
+    setSchoolIds(activeRequest.school_ids); setSchoolNames(names); setContext(activeRequest.context); setRequirements(activeRequest.requirements);
     setEditing(true); setNoteTarget(null); setError(null);
   }
   async function updateNotes(notes: Observation[]) {
@@ -257,7 +265,9 @@ export default function HomePage() {
   }
   const targetRow = comparison?.rows.find((row) => row.requirement.id === noteTarget?.requirementId);
   const targetSchool = comparison?.schools.find((school) => school.school_id === noteTarget?.schoolId);
-  const excludedNotes = (activeRequest?.observations ?? []).filter((note) => !schoolIds.includes(note.school_id) || !requirements.some((r) => r.id === note.requirement_id)).length;
+  const proposedSchoolIds = schoolNames.map((name, index) => schoolIdFor(name, index)) as [string, string];
+  const excludedNotes = (activeRequest?.observations ?? []).filter((note) => !proposedSchoolIds.includes(note.school_id) || !requirements.some((r) => r.id === note.requirement_id)).length;
+  const duplicateSchoolNames = schoolNames[0].trim() !== "" && schoolNames[0].trim().toLowerCase() === schoolNames[1].trim().toLowerCase();
 
   return <main className="shell">
     <header className="topbar">
@@ -273,12 +283,12 @@ export default function HomePage() {
       <p>Compare what matters, see what needs checking, and keep track of what you learn.</p>
     </div>}
     <aside className="notice" style={!editing ? { marginTop: 24 } : undefined}>
-      <strong>Demo workspace</strong>
-      {catalogue?.notice ?? "All five school records are fictional. Use this workspace to explore the comparison process."}
+      <strong>Live research workspace</strong>
+      Enter real Singapore primary-school names. The comparison searches public web sources through OpenRouter and shows source leads for you to verify with each school. No admission odds are predicted.
     </aside>
 
     {!catalogue && <div className="panel empty" role="status">
-      {catalogueError ? <><p>{catalogueError}</p><button className="secondary" onClick={() => setRetry((n) => n + 1)}>Retry loading schools</button></> : "Loading schools and priorities…"}
+      {catalogueError ? <><p>{catalogueError}</p><button className="secondary" onClick={() => setRetry((n) => n + 1)}>Retry loading requirements</button></> : "Loading requirements…"}
     </div>}
 
     {catalogue && editing && <form onSubmit={submitComparison}>
@@ -286,19 +296,16 @@ export default function HomePage() {
         <section className="panel" aria-labelledby="schools-title">
           <div className="section-heading">
             <span className="step" aria-hidden="true">1</span>
-            <div><h2 id="schools-title">Choose two schools to compare</h2><p className="help">For a real decision, first check that both schools are realistic registration options.</p></div>
+            <div><h2 id="schools-title">Name two schools to compare</h2><p className="help">Use the schools you are seriously considering. First check that both are realistic registration options.</p></div>
           </div>
           <div className="school-pickers">
             {([0, 1] as const).map((index) => <div className="school-picker" key={index}>
               <label>School {index === 0 ? "A" : "B"}
-                <select required value={schoolIds[index]} onChange={(e) => setSchoolIds((current) => index === 0 ? [e.target.value, current[1]] : [current[0], e.target.value])}>
-                  <option value="" disabled>Select a school</option>
-                  {catalogue.schools.map((school) => <option value={school.school_id} key={school.school_id}>{school.school_name}</option>)}
-                </select>
+                <input required maxLength={120} value={schoolNames[index]} onChange={(e) => setSchoolNames((current) => index === 0 ? [e.target.value, current[1]] : [current[0], e.target.value])} placeholder={index === 0 ? "e.g. Tao Nan School" : "e.g. Nanyang Primary School"} />
               </label>
             </div>)}
           </div>
-          {schoolIds[0] === schoolIds[1] && <p className="error" role="alert">Choose two different schools.</p>}
+          {duplicateSchoolNames && <p className="error" role="alert">Enter two different schools.</p>}
           <label htmlFor="family-context">What is keeping you undecided? <span className="help">(optional)</span></label>
           <textarea id="family-context" value={context} maxLength={3000} onChange={(e) => setContext(e.target.value)} placeholder="e.g. Our child gets overwhelmed by noise, and we need care after school. We’re unsure how either school handles this." rows={3} style={{ marginTop: 8 }} />
           <p className="help" style={{ margin: "8px 0 0" }}>Use the priorities below to turn your concern into specific requirements. Your notes stay in this page session.</p>
@@ -337,7 +344,7 @@ export default function HomePage() {
         {error && <p className="error" role="alert">{error}</p>}
         {excludedNotes > 0 && <p className="notice">{excludedNotes} note(s) belong to a removed school or changed requirement and will be excluded when you update. Cancel to keep the current comparison.</p>}
         <div className="actions">
-          <button type="submit" className="primary" disabled={busy || !requirements.length || !schoolIds[0] || !schoolIds[1] || schoolIds[0] === schoolIds[1]}>{busy ? "Comparing…" : comparison ? "Update schools & priorities" : "Compare these schools"}</button>
+          <button type="submit" className="primary" disabled={busy || !requirements.length || !schoolNames[0].trim() || !schoolNames[1].trim() || duplicateSchoolNames}>{busy ? "Researching…" : comparison ? "Update schools & priorities" : "Research these schools"}</button>
           {comparison && <button type="button" className="secondary" onClick={() => { setEditing(false); setError(null); }}>Cancel edits</button>}
           <span className="help">{requirements.length ? `${requirements.length} priorities selected` : "Select at least one priority."}</span>
         </div>
@@ -356,7 +363,7 @@ export default function HomePage() {
       </div>}
       <div className="assessment-grid">
         {comparison.assessments.map((assessment, index) => <article className={`assessment ${assessment.state}`} key={assessment.school_id}>
-          <p className="eyebrow" style={{ margin: "0 0 8px" }}>School {index === 0 ? "A" : "B"} · fictional record</p>
+          <p className="eyebrow" style={{ margin: "0 0 8px" }}>School {index === 0 ? "A" : "B"} · live research</p>
           <h2>{comparison.schools.find((s) => s.school_id === assessment.school_id)?.school_name}</h2>
           <span className={`pill ${assessment.state === "unmet_requirement" ? "not_met" : assessment.state === "requirements_supported" ? "supported" : "unknown"}`}>{ASSESSMENT[assessment.state]}</span>
           <p>{assessment.summary}</p>
