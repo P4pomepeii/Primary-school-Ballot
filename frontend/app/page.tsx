@@ -2,7 +2,6 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { Inter } from "next/font/google";
-import Image from "next/image";
 import {
   BookOpen, Backpack, Check, Info, MapPin, Moon, Music2, Sparkles, Users, HeartHandshake,
 } from "lucide-react";
@@ -316,29 +315,33 @@ export default function HomePage() {
 
   return <div className={`${styles.page} ${inter.variable} ${editing ? styles.pageWithBar : ""}`}>
     <header className={styles.header}>
-      <a href="/" className={styles.brand}><span className={styles.brandMark}><Check size={15} strokeWidth={3} /></span><span>School-Fit <strong>Copilot</strong></span></a>
+      <a href="/" className={styles.brand}><span className={styles.brandMark}><Check size={15} strokeWidth={3} /></span><span>School-Fit</span></a>
       <nav className={styles.nav} aria-label="Main navigation">
-        <a href="/" aria-current="page" className={`${styles.navLink} ${styles.navLinkActive}`}>Compare</a>
-        <a href="/discover" className={styles.navLink}>Discovery demo</a>
+        <a href="/" aria-current="page" className={`${styles.navLink} ${styles.navLinkActive}`}>Compare schools</a>
+        <a href="/discover" className={styles.navLink}>Explore schools</a>
       </nav>
     </header>
 
     <main className={styles.main}>
       {editing && <section className={styles.hero}>
         <div className={styles.heroCopy}>
-          <p className={styles.heroEyebrow}><span /> A calmer school search</p>
-          <h1>Two schools. Your family’s priorities.</h1>
-          <p>Compare what matters, see what needs checking, and keep track of what you learn.</p>
+          <p className={styles.heroEyebrow}><span /> For Singapore primary-school parents</p>
+          <h1>Make a school shortlist with evidence, not guesswork.</h1>
+          <p>Put two schools side by side, focus on what your child needs, and keep a record of the answers you receive.</p>
         </div>
-        <div className={styles.heroVisual}>
-          <Image src="/images/teacher-welcome.png" alt="A teacher welcoming a family and child at school" fill priority sizes="(max-width: 760px) 100vw, 390px" />
-          <div className={styles.heroBadge}><Check size={16} /><span><strong>A more useful match</strong><small>Built around your real priorities</small></span></div>
+        <div className={styles.heroGuide} aria-label="How to use this comparison">
+          <p className={styles.guideLabel}>A practical starting point</p>
+          <ol className={styles.guideList}>
+            <li><span>1</span><div><strong>Name two realistic options</strong><small>Start with schools you could actually apply to.</small></div></li>
+            <li><span>2</span><div><strong>Set your non-negotiables</strong><small>Separate must-haves from nice-to-haves.</small></div></li>
+            <li><span>3</span><div><strong>Verify before deciding</strong><small>Use the results to guide questions for each school.</small></div></li>
+          </ol>
         </div>
       </section>}
 
       <details className={styles.notice}>
-        <summary><Info size={16} strokeWidth={2.25} aria-hidden="true" />Live research workspace — how this works, in one line</summary>
-        <p>Enter real Singapore primary-school names. The comparison searches public web sources through OpenRouter and shows source leads for you to verify with each school. Do not include identifying child details; your context is sent to OpenRouter for this request and is not stored by this app. No admission odds are predicted.</p>
+        <summary><Info size={16} strokeWidth={2.25} aria-hidden="true" />Before you start</summary>
+        <p>Enter real Singapore primary-school names. We search public sources and show leads for you to check with each school. Do not include identifying child details. This tool does not predict admission chances.</p>
       </details>
 
       {!catalogue && <div className={styles.emptyState} role="status">
@@ -413,7 +416,7 @@ export default function HomePage() {
       <div className={styles.actionBarButtons}>
         {comparison && <button type="button" className={styles.secondaryBtn} disabled={busy} onClick={() => { setEditing(false); setError(null); }}>Cancel edits</button>}
         <button type="button" className={styles.primaryBtn} disabled={!canSubmit} onClick={() => formRef.current?.requestSubmit()}>
-          {busy ? "Researching…" : comparison ? "Update schools & priorities" : "Research these schools"}
+          {busy ? "Researching…" : comparison ? "Update schools & priorities" : "Compare these schools"}
         </button>
       </div>
     </div>}
