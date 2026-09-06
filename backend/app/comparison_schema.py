@@ -24,6 +24,7 @@ ObservationSource = Literal[
 Outcome = Literal["supports", "does_not_support", "unclear"]
 Status = Literal["supported", "not_met", "unknown", "conflicting"]
 Identifier = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=64)]
+SchoolName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)]
 Minutes = Annotated[float, Field(ge=1, le=300, allow_inf_nan=False)]
 SINGAPORE = ZoneInfo("Asia/Singapore")
 _HTTP_URL = TypeAdapter(HttpUrl)
@@ -107,6 +108,9 @@ class Observation(ComparisonModel):
 
 class ComparisonRequest(ComparisonModel):
     school_ids: list[Identifier] = Field(min_length=2, max_length=2)
+    # Real comparisons send display names plus stable client-side ids for notes.
+    # The ids-only shape remains valid for the original fictional test catalogue.
+    school_names: list[SchoolName] | None = None
     context: str = Field(max_length=3000)
     requirements: list[Requirement] = Field(min_length=1, max_length=8)
     observations: list[Observation] = Field(max_length=100)
@@ -115,7 +119,12 @@ class ComparisonRequest(ComparisonModel):
     def validate_references(self):
         if len(set(self.school_ids)) != 2:
             raise ValueError("Select two distinct schools.")
-        if any(school_id not in _seed_schools() for school_id in self.school_ids):
+        if self.school_names is not None:
+            if len(self.school_names) != 2:
+                raise ValueError("Provide two school names.")
+            if len({name.casefold() for name in self.school_names}) != 2:
+                raise ValueError("Provide two different school names.")
+        elif any(school_id not in _seed_schools() for school_id in self.school_ids):
             raise ValueError("Select schools from the school catalogue.")
         requirements = {requirement.id: requirement for requirement in self.requirements}
         if len(requirements) != len(self.requirements):
@@ -138,7 +147,7 @@ class ComparisonRequest(ComparisonModel):
 class CatalogueSchool(ComparisonModel):
     school_id: str
     school_name: str
-    is_demo: Literal[True] = True
+    is_demo: bool = True
 
 
 class CatalogueTopic(ComparisonModel):

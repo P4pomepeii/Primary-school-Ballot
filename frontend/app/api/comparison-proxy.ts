@@ -9,7 +9,7 @@ export async function comparisonProxy(path: "/schools" | "/compare", body?: unkn
       headers: { "Content-Type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
       cache: "no-store",
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(75000),
     });
     const data = await upstream.json();
     if (!upstream.ok) {

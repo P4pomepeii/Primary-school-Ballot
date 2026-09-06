@@ -2,11 +2,15 @@
 
 The main comparison workflow now runs independently of the original graph:
 
-- `GET /schools` returns the five fictional schools and requirement topics.
-- `POST /compare` evaluates two schools against must-haves and preferences, returns
-  evidence and follow-up questions, and accepts parent-recorded updates.
-- No LLM calls, database, real routing or personal admission predictions are used
-  by these endpoints. See [the API and evidence rules](../docs/COMPARISON.md).
+- `GET /schools` returns requirement topics; the main UI accepts two real school names.
+- `POST /compare` researches both names with one bounded OpenRouter web-search pass,
+  then evaluates must-haves and preferences deterministically.
+- No database, real routing or personal admission predictions are used by these
+  endpoints. See [the API and evidence rules](../docs/COMPARISON.md).
+
+Set `OPENROUTER_API_KEY` to enable live comparisons. `OPENROUTER_MODEL` defaults to
+`google/gemini-2.5-flash-lite`. Results contain source leads for verification; the
+API does not save prompts, notes or model responses.
 
 Use Python 3.11+ in a virtual environment:
 
