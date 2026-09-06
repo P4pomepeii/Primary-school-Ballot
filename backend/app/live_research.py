@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 import re
+from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
 from urllib.parse import urlparse
@@ -75,17 +76,24 @@ def _valid_url(value: str) -> bool:
     return bool(re.match(r"^https?://[^\s]+$", value, flags=re.IGNORECASE))
 
 
-def _prompt(request: ComparisonRequest) -> str:
+def _prompt(
+    request: ComparisonRequest,
+    school_ids: Sequence[str] | None = None,
+    requirements: Sequence[Requirement] | None = None,
+) -> str:
+    selected_school_ids = list(school_ids or request.school_ids)
+    names_by_id = dict(zip(request.school_ids, request.school_names or []))
     schools = "\n".join(
-        f'- id `{school_id}`: {school_name}'
-        for school_id, school_name in zip(request.school_ids, request.school_names or [])
+        f'- id `{school_id}`: {names_by_id[school_id]}'
+        for school_id in selected_school_ids
     )
-    requirements = "\n".join(
+    selected_requirements = list(requirements or request.requirements)
+    requirement_lines = "\n".join(
         f'- id `{requirement.id}` ({requirement.topic}, {requirement.priority}): {requirement.details}'
         + (f" Maximum door-to-door commute: {requirement.max_minutes:g} minutes." if requirement.max_minutes else "")
-        for requirement in request.requirements
+        for requirement in selected_requirements
     )
-    return f"""We are comparing two Singapore primary schools for a family. Research current public web sources and return only the JSON schema requested.
+    return f"""We are researching one or more Singapore primary schools for a family. Research current public web sources and return only the JSON schema requested.
 
 Schools:
 {schools}
@@ -94,7 +102,7 @@ Family context:
 {request.context or "No additional context."}
 
 Requirements:
-{requirements}
+{requirement_lines}
 
 Research rules:
 1. Search for each school by its exact name, prioritising the school's own site, Singapore MOE pages, and named programme or student-care provider pages. Do not substitute a similarly named school.
@@ -122,7 +130,12 @@ def _extract_content(payload: dict[str, Any]) -> str:
     raise LiveResearchError("OpenRouter returned no comparison content.")
 
 
-def _findings(payload: dict[str, Any], request: ComparisonRequest) -> dict[tuple[str, str], list[Evidence]]:
+def _findings(
+    payload: dict[str, Any],
+    request: ComparisonRequest,
+    school_ids: Sequence[str] | None = None,
+    requirements: Sequence[Requirement] | None = None,
+) -> dict[tuple[str, str], list[Evidence]]:
     try:
         candidate = _strip_json_fence(_extract_content(payload))
         if not candidate.strip():
@@ -197,8 +210,8 @@ def _findings(payload: dict[str, Any], request: ComparisonRequest) -> dict[tuple
     if not isinstance(findings, list):
         raise LiveResearchError("OpenRouter returned an invalid comparison format.")
 
-    school_ids = set(request.school_ids)
-    requirement_ids = {requirement.id for requirement in request.requirements}
+    selected_school_ids = set(school_ids or request.school_ids)
+    selected_requirement_ids = {requirement.id for requirement in (requirements or request.requirements)}
     today = datetime.now(SINGAPORE).date().isoformat()
     output: dict[tuple[str, str], list[Evidence]] = {}
     for index, item in enumerate(findings):
@@ -215,7 +228,7 @@ def _findings(payload: dict[str, Any], request: ComparisonRequest) -> dict[tuple
         if isinstance(url, str) and not title:
             title = urlparse(url).netloc or "Public web source"
         if (
-            school_id not in school_ids or requirement_id not in requirement_ids
+            school_id not in selected_school_ids or requirement_id not in selected_requirement_ids
             or outcome not in {"supports", "does_not_support", "unclear"}
             or not all(isinstance(value, str) and value.strip() for value in (title, url, excerpt))
             or not _valid_url(url)
@@ -235,8 +248,12 @@ def _findings(payload: dict[str, Any], request: ComparisonRequest) -> dict[tuple
     return output
 
 
-def research_schools(request: ComparisonRequest) -> dict[tuple[str, str], list[Evidence]]:
-    """Research both named schools in one bounded OpenRouter request."""
+def research_schools(
+    request: ComparisonRequest,
+    school_ids: Sequence[str] | None = None,
+    requirements: Sequence[Requirement] | None = None,
+) -> dict[tuple[str, str], list[Evidence]]:
+    """Research the selected named schools in one bounded OpenRouter request."""
     api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
     if not api_key:
         raise LiveResearchError("Live research is not configured.")
@@ -248,7 +265,7 @@ def research_schools(request: ComparisonRequest) -> dict[tuple[str, str], list[E
                 "role": "system",
                 "content": "You are a careful research assistant. Follow the source and uncertainty rules exactly. Return only the requested JSON.",
             },
-            {"role": "user", "content": _prompt(request)},
+            {"role": "user", "content": _prompt(request, school_ids, requirements)},
         ],
         "tools": [{
             "type": "openrouter:web_search",
@@ -273,4 +290,4 @@ def research_schools(request: ComparisonRequest) -> dict[tuple[str, str], list[E
         payload = response.json()
     except (httpx.HTTPError, ValueError):
         raise LiveResearchError("Live research could not be completed. Please try again shortly.") from None
-    return _findings(payload, request)
+    return _findings(payload, request, school_ids, requirements)
