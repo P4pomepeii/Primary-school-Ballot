@@ -18,7 +18,7 @@ from .comparison_schema import ComparisonRequest, Evidence, Requirement
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 SINGAPORE = ZoneInfo("Asia/Singapore")
 DEFAULT_MODEL = "google/gemini-2.5-flash-lite"
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn.error")
 
 _REQUIREMENT_PATTERNS = {
     "quiet_space": (

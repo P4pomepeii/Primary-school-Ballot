@@ -29,7 +29,7 @@ from .live_research import LiveResearchError, research_schools
 from .schema import SchoolFitResult
 
 app = FastAPI(title="School-Fit Copilot")
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn.error")
 
 _LIVE_CACHE_MAX_SCHOOLS = 128
 _LIVE_NEGATIVE_CACHE_TTL_SECONDS = 5 * 60
