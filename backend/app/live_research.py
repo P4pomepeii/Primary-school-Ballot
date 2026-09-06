@@ -102,6 +102,21 @@ Research rules:
 3. Never infer eligibility, admission probability, quality, teacher fit, commute time, or availability from a programme name or from silence. For commute, use unclear unless a source gives a measured journey relevant to this family.
 4. Return one finding per useful source, at most two sources per school/requirement. The source URL must be an exact HTTP/S URL that appeared in your search results. If no source is specific enough, omit that school/requirement rather than inventing a source.
 5. Keep excerpts short and faithful. Do not include private or sensitive personal information.
+
+Output format — return ONLY a single JSON object shaped exactly like this example (a flat "findings" array; do not nest by school or requirement, do not use any other key names, do not wrap in prose or markdown):
+{{
+  "findings": [
+    {{
+      "school_id": {json.dumps(request.school_ids[0])},
+      "requirement_id": {json.dumps(request.requirements[0].id)},
+      "outcome": "supports",
+      "source_title": "Example Source Title",
+      "source_url": "https://example.gov.sg/page",
+      "source_excerpt": "A short, faithful excerpt from that exact source."
+    }}
+  ]
+}}
+Every item in "findings" must have exactly these six fields: school_id, requirement_id, outcome, source_title, source_url, source_excerpt. If you find nothing specific enough for any school/requirement, return {{"findings": []}} rather than any other shape.
 """
 
 
