@@ -13,6 +13,10 @@ NOTICE = (
     "Demo snippets and parent experiences provide context only and cannot satisfy requirements. "
     "This comparison does not rank schools or estimate personal admission odds."
 )
+CATALOGUE_NOTICE = (
+    "Enter two real Singapore primary-school names. The comparison researches "
+    "public web sources through OpenRouter; do not include identifying child details."
+)
 LIVE_NOTICE = (
     "Live web research was retrieved for these school names through OpenRouter. "
     "Sources and summaries are research leads, not independently verified facts; "
@@ -75,9 +79,7 @@ def _school(request: ComparisonRequest, school_id: str) -> CatalogueSchool:
 
 def get_catalogue() -> CatalogueResponse:
     return CatalogueResponse(
-        schools=[CatalogueSchool(school_id=school_id, school_name=_seed_schools()[school_id]["name"])
-                 for school_id in _seed_schools()],
-        topics=[topic.model_copy() for topic in _TOPICS], notice=NOTICE,
+        schools=[], topics=[topic.model_copy() for topic in _TOPICS], notice=CATALOGUE_NOTICE,
     )
 
 

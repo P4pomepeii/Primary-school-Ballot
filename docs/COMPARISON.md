@@ -15,7 +15,8 @@ requirement logic deterministically. The discovery prototype remains separate.
 
 The frontend uses `/api/schools` and `/api/compare`; Next.js proxies to the backend
 with a timeout and no caching. Notes remain in page memory. The backend does not
-save requests. OpenRouter fetches current web results through its `openrouter:web_search`
+save requests. The family context is sent to OpenRouter for the live research request;
+do not include identifying child details. OpenRouter fetches current web results through its `openrouter:web_search`
 server tool; the backend only validates source URLs returned by the model and does
 not fetch those URLs itself.
 
