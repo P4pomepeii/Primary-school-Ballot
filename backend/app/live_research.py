@@ -111,6 +111,10 @@ def _extract_content(payload: dict[str, Any]) -> str:
         content = message.get("content")
         if isinstance(content, str):
             return content
+        if content is None:
+            # Some OpenRouter tool responses contain citations but no assistant
+            # text. Treat that as no usable evidence rather than a failed request.
+            return ""
         if isinstance(content, list):
             return "".join(part.get("text", "") for part in content if isinstance(part, dict))
     except (KeyError, IndexError, TypeError):
@@ -121,6 +125,8 @@ def _extract_content(payload: dict[str, Any]) -> str:
 def _findings(payload: dict[str, Any], request: ComparisonRequest) -> dict[tuple[str, str], list[Evidence]]:
     try:
         candidate = _strip_json_fence(_extract_content(payload))
+        if not candidate.strip():
+            return {}
         try:
             raw = json.loads(candidate)
         except json.JSONDecodeError:
@@ -153,6 +159,29 @@ def _findings(payload: dict[str, Any], request: ComparisonRequest) -> dict[tuple
                         })
     elif isinstance(raw, dict):
         findings = raw.get("findings", [])
+    elif isinstance(raw, list) and any(
+        isinstance(group, dict) and isinstance(group.get("requirements"), list)
+        for group in raw
+    ):
+        findings = []
+        for school in raw:
+            if not isinstance(school, dict):
+                continue
+            school_id = school.get("school_id") or school.get("id")
+            for requirement in school.get("requirements", []):
+                if not isinstance(requirement, dict):
+                    continue
+                finding = requirement.get("finding")
+                if not isinstance(finding, dict):
+                    continue
+                findings.append({
+                    "school_id": school_id,
+                    "requirement_id": requirement.get("requirement_id") or requirement.get("id"),
+                    "outcome": requirement.get("outcome") or requirement.get("finding_type"),
+                    "source_url": finding.get("source_url") or finding.get("url"),
+                    "source_excerpt": finding.get("source_excerpt") or finding.get("excerpt"),
+                    "source_title": finding.get("source_title") or finding.get("title"),
+                })
     elif isinstance(raw, list):
         findings = []
         for group in raw:
@@ -225,10 +254,6 @@ def research_schools(request: ComparisonRequest) -> dict[tuple[str, str], list[E
             "type": "openrouter:web_search",
             "parameters": {"engine": "auto", "max_results": 3, "max_total_results": 8},
         }],
-        "response_format": {
-            "type": "json_schema",
-            "json_schema": {"name": "school_comparison_research", "strict": True, "schema": _json_schema()},
-        },
         "temperature": 0.1,
         "max_tokens": 4500,
     }
