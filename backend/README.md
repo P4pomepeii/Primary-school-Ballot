@@ -1,5 +1,26 @@
 # backend — School-Fit Copilot agent graph
 
+The main comparison workflow now runs independently of the original graph:
+
+- `GET /schools` returns the five fictional schools and requirement topics.
+- `POST /compare` evaluates two schools against must-haves and preferences, returns
+  evidence and follow-up questions, and accepts parent-recorded updates.
+- No LLM calls, database, real routing or personal admission predictions are used
+  by these endpoints. See [the API and evidence rules](../docs/COMPARISON.md).
+
+Use Python 3.11+ in a virtual environment:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+MODEL_PROVIDER=fake .venv/bin/uvicorn app.server:app --reload
+```
+
+Run all comparison and legacy tests with `.venv/bin/python -m pytest -q`.
+If your environment is named `venv`, use that directory instead.
+
+The following sections describe the **legacy discovery graph** at `POST /invoke`.
+
 A LangGraph `StateGraph` that turns a parent's free-text description of
 their child into ranked, explained primary-school recommendations. See
 [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md) for the full pipeline
@@ -8,9 +29,8 @@ diagram and design rationale.
 ## Run locally
 
 ```bash
-pip install --break-system-packages -r requirements.txt
-cp .env.example .env   # defaults to MODEL_PROVIDER=fake — no API key needed
-uvicorn app.server:app --reload
+.venv/bin/python -m pip install -r requirements.txt
+MODEL_PROVIDER=fake .venv/bin/uvicorn app.server:app --reload
 ```
 
 This starts the API at `http://localhost:8000`:
@@ -34,7 +54,8 @@ MODEL_PROVIDER=fake python3 -m pytest -q
 
 ## Switching model providers
 
-`MODEL_PROVIDER` in `.env` controls `app/llm.py`:
+The exported environment variable `MODEL_PROVIDER` controls `app/llm.py` for the
+legacy discovery graph. `.env` is not automatically loaded by this backend:
 
 | value     | needs                                              | matches |
 |-----------|-----------------------------------------------------|---------|

@@ -1,5 +1,10 @@
 # Architecture — School-Fit Copilot
 
+> This document describes the original discovery graph, still available at
+> `/discover` and `POST /invoke`. The main app now uses the deterministic
+> [two-school comparison workflow](COMPARISON.md). Its evidence rules and
+> assessments are separate from the legacy graph's scores and admission estimates.
+
 ## The pipeline
 
 ```

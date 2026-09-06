@@ -1,14 +1,14 @@
+import "./globals.css";
+
 export const metadata = {
   title: "School-Fit Copilot",
-  description: "Personalised, explainable primary school recommendations for Singapore parents.",
+  description: "Compare two primary schools around your family's requirements, evidence and questions to ask next.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, fontFamily: "system-ui, sans-serif", background: "#f7f7f5" }}>
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
