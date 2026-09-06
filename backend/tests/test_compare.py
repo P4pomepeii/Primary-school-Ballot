@@ -442,3 +442,12 @@ def test_live_parser_accepts_provider_preamble_and_grouped_findings():
     result = _findings(payload, request)
     assert result[("school-1-tao-nan", "quiet-space")][0].outcome == "supports"
     assert result[("school-1-tao-nan", "quiet-space")][0].source_url == "https://example.com/tao-nan"
+
+
+def test_live_parser_accepts_school_requirement_response_shape():
+    request = ComparisonRequest.model_validate(real_payload())
+    payload = {"choices": [{"message": {"content": """```json
+{"schools":[{"id":"school-1-tao-nan","requirements":[{"id":"quiet-space","findings":[{"id":"supports","url":"https://example.com/tao-nan","excerpt":"A quiet space is described."}]}]}]}
+```"""}}]}
+    result = _findings(payload, request)
+    assert result[("school-1-tao-nan", "quiet-space")][0].outcome == "supports"
