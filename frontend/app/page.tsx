@@ -1,7 +1,10 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { Fraunces } from "next/font/google";
+import { Inter } from "next/font/google";
+import {
+  BookOpen, Backpack, Info, MapPin, Moon, Music2, Sparkles, Users, HeartHandshake,
+} from "lucide-react";
 import styles from "./page.module.css";
 import type {
   Catalogue, ComparisonCell, ComparisonRequest, ComparisonResponse, EvidenceStatus,
@@ -10,7 +13,18 @@ import type {
 
 type Importance = "not_needed" | Priority;
 
-const fraunces = Fraunces({ subsets: ["latin"], weight: ["600", "700"], variable: "--font-fraunces", display: "swap" });
+const inter = Inter({ subsets: ["latin"], weight: ["400", "600", "700", "800"], variable: "--font-inter", display: "swap" });
+
+const TOPIC_ICON: Record<Topic, typeof Moon> = {
+  quiet_space: Moon,
+  learning_support: BookOpen,
+  student_care: HeartHandshake,
+  commute: MapPin,
+  workload: Backpack,
+  social_inclusion: Users,
+  cca: Music2,
+  custom: Sparkles,
+};
 
 const STATUS: Record<EvidenceStatus, string> = {
   supported: "Supported by your information", not_met: "Requirement not met",
@@ -299,7 +313,7 @@ export default function HomePage() {
   const canSubmit = !busy && requirements.length > 0 && schoolNames[0].trim() !== "" && schoolNames[1].trim() !== "" && !duplicateSchoolNames;
   const missedMustHaves = comparison?.rows.filter((row) => row.requirement.priority === "must_have" && row.cells.some((cell) => cell.status === "not_met")) ?? [];
 
-  return <div className={`${styles.page} ${fraunces.variable} ${editing ? styles.pageWithBar : ""}`}>
+  return <div className={`${styles.page} ${inter.variable} ${editing ? styles.pageWithBar : ""}`}>
     <header className={styles.header}>
       <a href="/" className={styles.brand}>School-Fit Copilot</a>
       <nav className={styles.nav} aria-label="Main navigation">
@@ -315,7 +329,7 @@ export default function HomePage() {
       </section>}
 
       <details className={styles.notice}>
-        <summary>Live research workspace — how this works, in one line</summary>
+        <summary><Info size={16} strokeWidth={2.25} aria-hidden="true" />Live research workspace — how this works, in one line</summary>
         <p>Enter real Singapore primary-school names. The comparison searches public web sources through OpenRouter and shows source leads for you to verify with each school. Do not include identifying child details; your context is sent to OpenRouter for this request and is not stored by this app. No admission odds are predicted.</p>
       </details>
 
@@ -353,8 +367,12 @@ export default function HomePage() {
               {catalogue.topics.map((topic) => {
                 const requirement = requirements.find((r) => r.topic === topic.id);
                 const importance: Importance = requirement?.priority ?? "not_needed";
+                const TopicIcon = TOPIC_ICON[topic.id];
                 return <div key={topic.id} className={`${styles.priorityCard} ${requirement ? styles.priorityCardActive : ""}`}>
-                  <p className={styles.priorityTitle}>{topic.label}</p>
+                  <div className={styles.priorityTitleRow}>
+                    <span className={styles.priorityIcon} aria-hidden="true"><TopicIcon size={13} strokeWidth={2.25} /></span>
+                    <p className={styles.priorityTitle}>{topic.label}</p>
+                  </div>
                   <p className={styles.priorityDesc}>{topic.description}</p>
                   <div className={styles.segment} role="group" aria-label={`Importance for ${topic.label}`}>
                     <button type="button" className={styles.segmentBtn} aria-pressed={importance === "not_needed"} onClick={() => setImportance(topic.id, "not_needed")}>Not needed</button>
