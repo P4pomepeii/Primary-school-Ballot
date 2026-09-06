@@ -3,8 +3,8 @@
 The main comparison workflow now runs independently of the original graph:
 
 - `GET /schools` returns requirement topics; the main UI accepts two real school names.
-- `POST /compare` researches uncached names with one bounded OpenRouter web-search
-  pass, then evaluates must-haves and preferences deterministically.
+- `POST /compare` researches each uncached name with one bounded OpenRouter
+  web-search pass, then evaluates must-haves and preferences deterministically.
 - No database, real routing or personal admission predictions are used by these
   endpoints. See [the API and evidence rules](../docs/COMPARISON.md).
 
@@ -13,7 +13,9 @@ Set `OPENROUTER_API_KEY` to enable live comparisons. `OPENROUTER_MODEL` defaults
 JSON shape when the web-search tool is active). Results contain source leads for verification; the
 API does not save prompts or notes. Live evidence is shared in a bounded,
 process-local cache keyed by school name, so repeated users do not trigger another
-API call for the same school.
+API call for the same school. Empty results expire after five minutes. Official
+MOE-domain citation annotations are retained as inconclusive source leads when the
+model returns no final content.
 
 Use Python 3.11+ in a virtual environment:
 

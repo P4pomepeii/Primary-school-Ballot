@@ -2,8 +2,8 @@
 
 The main workflow helps a family investigate two real schools it is already considering.
 It complements the original discovery prototype, which remains at `/discover`.
-The comparison uses one bounded OpenRouter web-research request for each batch of
-uncached school names, then applies the requirement logic deterministically. The
+The comparison uses one bounded OpenRouter web-research request for each uncached
+school name, then applies the requirement logic deterministically. The
 discovery prototype remains separate.
 
 ## Workflow
@@ -18,7 +18,8 @@ The frontend uses `/api/schools` and `/api/compare`; Next.js proxies to the back
 with a timeout and no caching. Notes remain in page memory. The backend does not
 save prompts or notes. Live evidence is cached by normalized school name in a
 bounded process-global cache shared by users on the same instance, and the cache
-is cleared on restart or redeploy. The family context is sent to OpenRouter for the live research request;
+is cleared on restart or redeploy. Empty results expire after five minutes. The
+family context is sent to OpenRouter for the live research request;
 do not include identifying child details. OpenRouter fetches current web results through its `openrouter:web_search`
 server tool; the backend only validates source URLs returned by the model and does
 not fetch those URLs itself.
@@ -124,8 +125,11 @@ or educator counts alone must not be treated as proof that a child's particular
 arrangement is available. Preserve the distinction between a published policy, an
 individual account, a live research lead and a confirmed arrangement.
 
-Live research is intentionally bounded to one request per batch of new schools, at
-most three results per search and eight total search results. Once a school is in
+Live research is intentionally bounded to one request per new school, at most three
+results per search and eight total search results. When OpenRouter returns citation
+annotations without final model content, citations from official `moe.gov.sg` and
+`moe.edu.sg` domains are matched conservatively to the school and requirement and
+shown with an `unclear` outcome. Once a school has usable evidence in
 the process cache, changing notes or context does not call OpenRouter again. A
 requirement not covered when that school was first researched remains unknown
 rather than causing a second API call. Set `OPENROUTER_API_KEY` and optionally

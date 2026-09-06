@@ -89,8 +89,10 @@ Live comparison evidence is cached by normalized school name in the backend proc
 so all users on the machine share one result. A request researches only names not
 already in that cache; changing notes or context does not trigger another OpenRouter
 call. The cache holds up to 128 schools and is cleared by a restart, redeploy or
-eviction. A new requirement for an already cached school remains unknown until the
-school confirms it, because the API key is reserved for first-time school research.
+eviction. Empty research results expire after five minutes so a transient provider
+failure does not affect every later user. A new requirement for an already cached
+school remains unknown until the school confirms it, because the API key is reserved
+for first-time school research and retries of failed research.
 
 The frontend uses the supported Next.js 15.5 line. The PostCSS override keeps its
 transitive CSS dependency patched; review it when updating Next.js.
@@ -124,7 +126,8 @@ select the requirements that are evaluated.
 
 The app does not check registration eligibility, geocode a home, verify external
 links, or predict teachers, peers or future outcomes. Web research is limited to one
-bounded OpenRouter request for each batch of new schools with a small search-result
-cap; source URLs are presented as leads for the family to verify. Production
+bounded OpenRouter request per new school with a small search-result cap. If the
+model returns citations without a final answer, official MOE and school-site
+citations are retained as inconclusive source leads. Production
 deployment also needs appropriate access controls, rate limits, cost controls, and
 a reviewed data-handling policy.

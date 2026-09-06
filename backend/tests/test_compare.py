@@ -431,13 +431,17 @@ def test_real_school_api_uses_research_pass(client, monkeypatch):
     called = []
 
     def fake_research(received, **kwargs):
-        called.append(received.school_names)
-        return {("school-1-tao-nan", "quiet-space"): [evidence]}
+        selected_school_ids = kwargs["school_ids"]
+        called.append(selected_school_ids)
+        return {
+            (school_id, "quiet-space"): [evidence.model_copy(update={"id": f"live:{school_id}"})]
+            for school_id in selected_school_ids
+        }
 
     monkeypatch.setattr("app.server.research_schools", fake_research)
     response = client.post("/compare", json=real_payload())
     assert response.status_code == 200
-    assert called == [["Tao Nan School", "Nanyang Primary School"]]
+    assert called == [["school-1-tao-nan"], ["school-2-nanyang"]]
     assert response.json()["rows"][0]["cells"][0]["status"] == "supported"
     assert response.json()["rows"][0]["cells"][0]["evidence"][0]["source_url"] == "https://example.com/tao-nan"
 
@@ -456,8 +460,8 @@ def test_real_school_api_reuses_live_research_when_notes_change(client, monkeypa
     calls = []
 
     def fake_research(received, **kwargs):
-        calls.append(received.observations)
         selected_school_ids = kwargs["school_ids"]
+        calls.append(selected_school_ids)
         return {(selected_school_ids[0], "quiet-space"): [evidence]}
 
     monkeypatch.setattr("app.server.research_schools", fake_research)
@@ -470,7 +474,7 @@ def test_real_school_api_reuses_live_research_when_notes_change(client, monkeypa
         )],
     })
     assert first.status_code == second.status_code == 200
-    assert len(calls) == 1
+    assert calls == [["family-a-tao-nan"], ["family-a-nanyang"]]
     assert second.json()["rows"][0]["cells"][0]["evidence"][0]["source_type"] == "school_response"
 
 
@@ -501,7 +505,8 @@ def test_real_school_api_researches_only_new_school(client, monkeypatch):
 
     assert first.status_code == second.status_code == 200
     assert calls == [
-        ["school-1-tao-nan", "school-2-nanyang"],
+        ["school-1-tao-nan"],
+        ["school-2-nanyang"],
         ["school-3-new-school"],
     ]
     assert second.json()["rows"][0]["cells"][0]["status"] == "supported"
@@ -551,3 +556,100 @@ def test_live_parser_treats_empty_provider_content_as_no_evidence():
     request = ComparisonRequest.model_validate(real_payload())
     payload = {"choices": [{"message": {"content": None}}]}
     assert _findings(payload, request) == {}
+
+
+def test_live_parser_treats_unstructured_provider_prose_as_no_evidence():
+    request = ComparisonRequest.model_validate(real_payload())
+    payload = {"choices": [{"message": {
+        "content": "I could not complete the requested research.",
+        "annotations": [],
+    }}]}
+    assert _findings(payload, request) == {}
+
+
+def test_live_parser_uses_official_annotations_when_content_is_empty():
+    request = ComparisonRequest.model_validate(real_payload(requirements=[
+        requirement(
+            topic="student_care", id="student-care",
+            details="On-site or affiliated student care",
+        ),
+    ]))
+    source_url = "https://www.taonan.moe.edu.sg/partners/for-parents/school-service-providers/"
+    payload = {"choices": [{"message": {
+        "content": None,
+        "annotations": [{
+            "type": "url_citation",
+            "url_citation": {
+                "url": source_url,
+                "title": "School Service Providers - Tao Nan School",
+                "content": "Student Care | YMCA of Singapore | Term time Monday to Friday, 1:30pm to 7:00pm.",
+            },
+        }],
+    }}]}
+
+    result = _findings(payload, request, school_ids=["school-1-tao-nan"])
+    evidence = result[("school-1-tao-nan", "student-care")][0]
+    assert evidence.source_url == source_url
+    assert evidence.outcome == "unclear"
+    assert evidence.source_type == "published_information"
+    assert evidence.is_demo is False
+    assert "student care" in evidence.summary.lower()
+
+
+def test_live_parser_rejects_irrelevant_or_nonofficial_annotations():
+    request = ComparisonRequest.model_validate(real_payload(requirements=[
+        requirement(), requirement(topic="cca", id="cca"),
+    ]))
+    payload = {"choices": [{"message": {
+        "content": None,
+        "annotations": [
+            {
+                "type": "url_citation",
+                "url_citation": {
+                    "url": "https://property.example.com/quiet-condo",
+                    "title": "Quiet homes near Tao Nan School",
+                    "content": "Quiet space and landscaped gardens near Tao Nan School.",
+                },
+            },
+            {
+                "type": "url_citation",
+                "url_citation": {
+                    "url": "https://www.otherschool.moe.edu.sg/support/quiet-space/",
+                    "title": "Quiet space - Other Primary School",
+                    "content": "Other Primary School provides a quiet space.",
+                },
+            },
+            {
+                "type": "url_citation",
+                "url_citation": {
+                    "url": "https://www.zhangdepri.moe.edu.sg/files/student-calendar.pdf",
+                    "title": "Student Calendar - Zhangde Primary School",
+                    "content": "CCA exchange at Tao Nan School on Friday.",
+                },
+            },
+        ],
+    }}]}
+
+    assert _findings(payload, request, school_ids=["school-1-tao-nan"]) == {}
+
+
+def test_empty_school_research_cache_expires(client, monkeypatch):
+    now = [100.0]
+    calls = []
+
+    def fake_research(received, **kwargs):
+        calls.append(kwargs["school_ids"])
+        return {}
+
+    monkeypatch.setattr("app.server.research_schools", fake_research)
+    monkeypatch.setattr(server.time, "monotonic", lambda: now[0])
+    first = client.post("/compare", json=real_payload())
+    second = client.post("/compare", json=real_payload(context="Another user"))
+    now[0] += server._LIVE_NEGATIVE_CACHE_TTL_SECONDS + 1
+    third = client.post("/compare", json=real_payload(context="Retry after expiry"))
+
+    assert first.status_code == second.status_code == third.status_code == 200
+    assert calls == [
+        ["school-1-tao-nan"], ["school-2-nanyang"],
+        ["school-1-tao-nan"], ["school-2-nanyang"],
+    ]
