@@ -429,6 +429,33 @@ def test_real_school_api_uses_research_pass(client, monkeypatch):
     assert response.json()["rows"][0]["cells"][0]["evidence"][0]["source_url"] == "https://example.com/tao-nan"
 
 
+def test_real_school_api_reuses_live_research_when_notes_change(client, monkeypatch):
+    request = real_payload(context="Cache behavior walkthrough")
+    evidence = Evidence(
+        id="live:source", source_type="published_information", source_label="Live web research — School page",
+        source_url="https://example.com/tao-nan", observed_on="2026-09-06",
+        summary="The source describes the arrangement.", outcome="supports",
+        commute_minutes=None, is_demo=False,
+    )
+    calls = []
+
+    def fake_research(received):
+        calls.append(received.observations)
+        return {("school-1-tao-nan", "quiet-space"): [evidence]}
+
+    monkeypatch.setattr("app.server.research_schools", fake_research)
+    first = client.post("/compare", json=request)
+    second = client.post("/compare", json={
+        **request,
+        "observations": [observation(
+            school_id="school-1-tao-nan", requirement_id="quiet-space",
+        )],
+    })
+    assert first.status_code == second.status_code == 200
+    assert len(calls) == 1
+    assert second.json()["rows"][0]["cells"][0]["evidence"][0]["source_type"] == "school_response"
+
+
 def test_live_parser_accepts_provider_preamble_and_grouped_findings():
     request = ComparisonRequest.model_validate(real_payload())
     payload = {"choices": [{"message": {"content": """Research complete.
