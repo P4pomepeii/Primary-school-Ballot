@@ -118,14 +118,38 @@ def _extract_content(payload: dict[str, Any]) -> str:
 
 def _findings(payload: dict[str, Any], request: ComparisonRequest) -> dict[tuple[str, str], list[Evidence]]:
     try:
-        raw = json.loads(_strip_json_fence(_extract_content(payload)))
+        candidate = _strip_json_fence(_extract_content(payload))
+        try:
+            raw = json.loads(candidate)
+        except json.JSONDecodeError:
+            start = min((index for index in (candidate.find("{"), candidate.find("[")) if index >= 0), default=-1)
+            if start < 0:
+                raise
+            raw, _ = json.JSONDecoder().raw_decode(candidate[start:])
     except (json.JSONDecodeError, KeyError, TypeError):
         raise LiveResearchError("OpenRouter returned an invalid comparison format.") from None
 
     # Models occasionally wrap findings by school/requirement even when the
     # provider accepts the requested JSON schema. Flatten both that shape and the
     # canonical {"findings": [...]} shape before applying strict validation.
-    if isinstance(raw, dict):
+    if isinstance(raw, dict) and isinstance(raw.get("schools"), list):
+        findings = []
+        for school in raw["schools"]:
+            if not isinstance(school, dict):
+                continue
+            school_id = school.get("school_id") or school.get("id")
+            for requirement in school.get("requirements", []):
+                if not isinstance(requirement, dict):
+                    continue
+                requirement_id = requirement.get("requirement_id") or requirement.get("id")
+                for finding in requirement.get("findings", []):
+                    if isinstance(finding, dict):
+                        findings.append({
+                            **finding,
+                            "school_id": school_id,
+                            "requirement_id": requirement_id,
+                        })
+    elif isinstance(raw, dict):
         findings = raw.get("findings", [])
     elif isinstance(raw, list):
         findings = []
@@ -151,9 +175,11 @@ def _findings(payload: dict[str, Any], request: ComparisonRequest) -> dict[tuple
             continue
         school_id = item.get("school_id")
         requirement_id = item.get("requirement_id")
-        outcome = item.get("outcome") or item.get("support")
+        outcome = item.get("outcome") or item.get("support") or (
+            item.get("id") if item.get("id") in {"supports", "does_not_support", "unclear"} else None
+        )
         title = item.get("source_title") or item.get("source_label")
-        url = item.get("source_url")
+        url = item.get("source_url") or item.get("url")
         excerpt = item.get("source_excerpt") or item.get("excerpt")
         if isinstance(url, str) and not title:
             title = urlparse(url).netloc or "Public web source"
