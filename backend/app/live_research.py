@@ -16,7 +16,7 @@ from .comparison_schema import ComparisonRequest, Evidence, Requirement
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 SINGAPORE = ZoneInfo("Asia/Singapore")
-DEFAULT_MODEL = "google/gemini-2.5-flash-lite"
+DEFAULT_MODEL = "google/gemini-2.5-flash"
 
 
 class LiveResearchError(RuntimeError):

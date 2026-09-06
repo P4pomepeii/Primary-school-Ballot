@@ -9,7 +9,8 @@ The main comparison workflow now runs independently of the original graph:
   endpoints. See [the API and evidence rules](../docs/COMPARISON.md).
 
 Set `OPENROUTER_API_KEY` to enable live comparisons. `OPENROUTER_MODEL` defaults to
-`google/gemini-2.5-flash-lite`. Results contain source leads for verification; the
+`google/gemini-2.5-flash` (the `-lite` tier does not reliably return the requested
+JSON shape when the web-search tool is active). Results contain source leads for verification; the
 API does not save prompts or notes. Live evidence is shared in a bounded,
 process-local cache keyed by school name, so repeated users do not trigger another
 API call for the same school.
