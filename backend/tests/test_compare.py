@@ -412,7 +412,11 @@ def test_real_school_names_skip_fictional_seed_evidence():
     assert all(school.is_demo is False for school in result.schools)
     assert result.rows[0].cells[0].status == "supported"
     assert result.rows[0].cells[1].status == "unknown"
-    assert all(evidence.is_demo is False for row in result.rows for cell in row.cells for evidence in cell.evidence)
+    assert all(evidence.is_demo is False for evidence in result.rows[0].cells[0].evidence)
+    placeholder = result.rows[0].cells[1].evidence[0]
+    assert placeholder.source_type == "demo"
+    assert placeholder.is_demo is True
+    assert "synthetic" in placeholder.source_label.lower()
     assert "live web research" in result.notice.lower()
 
 
