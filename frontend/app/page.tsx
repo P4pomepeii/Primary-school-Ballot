@@ -2,8 +2,9 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { Inter } from "next/font/google";
+import Image from "next/image";
 import {
-  BookOpen, Backpack, Info, MapPin, Moon, Music2, Sparkles, Users, HeartHandshake,
+  BookOpen, Backpack, Check, Info, MapPin, Moon, Music2, Sparkles, Users, HeartHandshake,
 } from "lucide-react";
 import styles from "./page.module.css";
 import type {
@@ -315,7 +316,7 @@ export default function HomePage() {
 
   return <div className={`${styles.page} ${inter.variable} ${editing ? styles.pageWithBar : ""}`}>
     <header className={styles.header}>
-      <a href="/" className={styles.brand}>School-Fit Copilot</a>
+      <a href="/" className={styles.brand}><span className={styles.brandMark}><Check size={15} strokeWidth={3} /></span><span>School-Fit <strong>Copilot</strong></span></a>
       <nav className={styles.nav} aria-label="Main navigation">
         <a href="/" aria-current="page" className={`${styles.navLink} ${styles.navLinkActive}`}>Compare</a>
         <a href="/discover" className={styles.navLink}>Discovery demo</a>
@@ -324,8 +325,15 @@ export default function HomePage() {
 
     <main className={styles.main}>
       {editing && <section className={styles.hero}>
-        <h1>Two schools. Your family’s priorities.</h1>
-        <p>Compare what matters, see what needs checking, and keep track of what you learn.</p>
+        <div className={styles.heroCopy}>
+          <p className={styles.heroEyebrow}><span /> A calmer school search</p>
+          <h1>Two schools. Your family’s priorities.</h1>
+          <p>Compare what matters, see what needs checking, and keep track of what you learn.</p>
+        </div>
+        <div className={styles.heroVisual}>
+          <Image src="/images/teacher-welcome.png" alt="A teacher welcoming a family and child at school" fill priority sizes="(max-width: 760px) 100vw, 390px" />
+          <div className={styles.heroBadge}><Check size={16} /><span><strong>A more useful match</strong><small>Built around your real priorities</small></span></div>
+        </div>
       </section>}
 
       <details className={styles.notice}>
