@@ -9,6 +9,8 @@ Two jobs:
 """
 from __future__ import annotations
 
+import logging
+import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from threading import Lock
@@ -27,20 +29,27 @@ from .live_research import LiveResearchError, research_schools
 from .schema import SchoolFitResult
 
 app = FastAPI(title="School-Fit Copilot")
+logger = logging.getLogger(__name__)
 
 _LIVE_CACHE_MAX_SCHOOLS = 128
+_LIVE_NEGATIVE_CACHE_TTL_SECONDS = 5 * 60
 
 
 @dataclass
 class _LiveSchoolCacheEntry:
+    cached_at: float
     covered_requirements: set[tuple[str, str, float | None]] = field(default_factory=set)
     findings: dict[tuple[str, str, float | None], list[Evidence]] = field(default_factory=dict)
 
+    @property
+    def has_evidence(self) -> bool:
+        return any(self.findings.values())
+
 
 # This cache is deliberately process-global: every user routed to this Fly
-# machine shares the same researched-school results. It is bounded but does
-# not expire, so a school is only sent to OpenRouter again after eviction or a
-# process restart/redeploy.
+# machine shares the same researched-school results. Positive results stay
+# until eviction or restart; empty results expire quickly so a transient model
+# or search failure cannot poison the shared cache indefinitely.
 _live_school_cache: OrderedDict[str, _LiveSchoolCacheEntry] = OrderedDict()
 _live_cache_lock = Lock()
 _live_research_lock = Lock()
@@ -73,13 +82,23 @@ def _read_cached_live_evidence(
     """Return reusable evidence and ids for schools never seen by this process."""
     evidence: dict[tuple[str, str], list[Evidence]] = {}
     uncached_school_ids: list[str] = []
+    cache_hits = 0
+    expired_negative_entries = 0
     with _live_cache_lock:
         for school_id, school_name in zip(request.school_ids, request.school_names or []):
             cache_key = _school_cache_key(school_name)
             entry = _live_school_cache.get(cache_key)
+            if (
+                entry is not None and not entry.has_evidence
+                and time.monotonic() - entry.cached_at >= _LIVE_NEGATIVE_CACHE_TTL_SECONDS
+            ):
+                _live_school_cache.pop(cache_key, None)
+                entry = None
+                expired_negative_entries += 1
             if entry is None:
                 uncached_school_ids.append(school_id)
                 continue
+            cache_hits += 1
             _live_school_cache.move_to_end(cache_key)
             for requirement in request.requirements:
                 requirement_key = _requirement_cache_key(requirement)
@@ -89,6 +108,10 @@ def _read_cached_live_evidence(
                     _relabel_cached_evidence(item, school_id, requirement.id, index)
                     for index, item in enumerate(entry.findings.get(requirement_key, []))
                 ]
+    logger.info(
+        "live_cache_lookup hits=%d misses=%d expired_negative=%d",
+        cache_hits, len(uncached_school_ids), expired_negative_entries,
+    )
     return evidence, uncached_school_ids
 
 
@@ -102,13 +125,17 @@ def _store_live_evidence(
         for school_id in researched_school_ids:
             school_name = names_by_id[school_id]
             cache_key = _school_cache_key(school_name)
-            entry = _LiveSchoolCacheEntry()
+            entry = _LiveSchoolCacheEntry(cached_at=time.monotonic())
             for requirement in request.requirements:
                 requirement_key = _requirement_cache_key(requirement)
                 entry.covered_requirements.add(requirement_key)
                 entry.findings[requirement_key] = list(evidence.get((school_id, requirement.id), []))
             _live_school_cache[cache_key] = entry
             _live_school_cache.move_to_end(cache_key)
+            logger.info(
+                "live_cache_store evidence=%d negative=%s",
+                sum(len(items) for items in entry.findings.values()), not entry.has_evidence,
+            )
         while len(_live_school_cache) > _LIVE_CACHE_MAX_SCHOOLS:
             _live_school_cache.popitem(last=False)
 
@@ -191,12 +218,13 @@ def compare(req: ComparisonRequest) -> ComparisonResponse:
         with _live_research_lock:
             live_evidence, uncached_school_ids = _read_cached_live_evidence(req)
             if uncached_school_ids:
-                try:
-                    newly_researched = research_schools(req, school_ids=uncached_school_ids)
-                except LiveResearchError as exc:
-                    return JSONResponse(status_code=503, content={"error": str(exc)})
-                _store_live_evidence(req, uncached_school_ids, newly_researched)
-                live_evidence.update(newly_researched)
+                for school_id in uncached_school_ids:
+                    try:
+                        newly_researched = research_schools(req, school_ids=[school_id])
+                    except LiveResearchError as exc:
+                        return JSONResponse(status_code=503, content={"error": str(exc)})
+                    _store_live_evidence(req, [school_id], newly_researched)
+                    live_evidence.update(newly_researched)
     return compare_schools(req, live_evidence=live_evidence)
 
 
