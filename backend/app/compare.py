@@ -22,7 +22,9 @@ LIVE_NOTICE = (
     "Sources and summaries are research leads, not independently verified facts; "
     "confirm important arrangements with the school. Parent-entered evidence is "
     "also recorded by parent, not independently verified. This comparison does "
-    "not rank schools or estimate personal admission odds."
+    "not rank schools or estimate personal admission odds. Where research finds "
+    "no sufficiently specific source, a synthetic placeholder may appear for the "
+    "demo flow; it is not a school fact and cannot satisfy a requirement."
 )
 _TOPICS = [
     CatalogueTopic(
@@ -68,6 +70,16 @@ _TOPICS = [
 ]
 _TOPIC_BY_ID = {topic.id: topic for topic in _TOPICS}
 _DIRECT_SOURCES = {"school_response", "published_information", "family_observation"}
+_SYNTHETIC_PLACEHOLDERS = {
+    "quiet_space": "Synthetic example only: ask whether a quiet area is available, when it can be used, and who helps a child access it.",
+    "learning_support": "Synthetic example only: ask about learning-support access, eligibility, frequency and waiting arrangements.",
+    "student_care": "Synthetic example only: ask about student-care hours, capacity and how individual support needs would be handled.",
+    "commute": "Synthetic example only: record a measured door-to-door journey at the usual travel time; no travel time is asserted here.",
+    "workload": "Synthetic example only: ask about typical homework demands and what adjustments are available.",
+    "social_inclusion": "Synthetic example only: ask how participation, friendships and exclusion concerns would be supported.",
+    "cca": "Synthetic example only: ask about activity availability, entry arrangements, schedule and participation support.",
+    "custom": "Synthetic example only: ask how the school would meet this specific requirement and what limitations apply.",
+}
 
 
 def _school(request: ComparisonRequest, school_id: str) -> CatalogueSchool:
@@ -109,6 +121,16 @@ def _outcome(observation: Observation, requirement: Requirement) -> Outcome:
     return "supports" if observation.commute_minutes <= requirement.max_minutes else "does_not_support"
 
 
+def _synthetic_placeholder(school_id: str, requirement: Requirement) -> Evidence:
+    return Evidence(
+        id=f"synthetic:{school_id}:{requirement.id}", source_type="demo",
+        source_label="Synthetic placeholder — not a school fact; context only",
+        source_url=None, observed_on=None,
+        summary=_SYNTHETIC_PLACEHOLDERS[requirement.topic], outcome="unclear",
+        commute_minutes=None, is_demo=True,
+    )
+
+
 def _cell(
     request: ComparisonRequest,
     requirement: Requirement,
@@ -130,6 +152,7 @@ def _cell(
         ))
         if observation.source_type in _DIRECT_SOURCES:
             direct_outcomes.add(outcome)
+    live_sources = []
     if live_evidence is not None:
         live_sources = live_evidence.get((school_id, requirement.id), [])
         evidence.extend(live_sources)
@@ -152,6 +175,8 @@ def _cell(
     else:
         status = "unknown"
         explanation = "There is no conclusive direct evidence for this requirement. Demo snippets and parent experiences are context only."
+    if live_evidence is not None and not live_sources:
+        evidence.append(_synthetic_placeholder(school_id, requirement))
     if requirement.topic == "commute":
         explanation += (
             f" Measured journeys of {requirement.max_minutes:g} minutes or less support the limit; "
@@ -162,8 +187,11 @@ def _cell(
         if live_evidence is not None
         else " Parent-entered evidence is recorded by parent, not independently verified."
     )
-    if live_evidence is not None and not evidence:
-        explanation = "Live research did not find a sufficiently specific source for this requirement. Ask the school directly."
+    if live_evidence is not None and not live_sources:
+        explanation = (
+            "Live research did not find a sufficiently specific source for this requirement. "
+            "The synthetic placeholder is illustrative only and not a fact about this school; ask the school directly."
+        )
     return ComparisonCell(school_id=school_id, status=status, explanation=explanation, evidence=evidence)
 
 
