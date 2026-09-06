@@ -63,6 +63,34 @@ cd frontend
 npm run build
 ```
 
+## Fly.io demo deployment
+
+The branch demo runs at https://school-fit-comparison.fly.dev. To deploy the current
+checkout from the repository root with an authenticated Fly.io CLI:
+
+```bash
+fly deploy --remote-only --ha=false
+fly checks list
+```
+
+The Docker image builds the standalone Next.js frontend and runs the backend tests.
+Both services run as a non-root user on one 512 MB shared-CPU machine in Singapore;
+the backend listens only on loopback. `/api/health` checks both services. No API
+keys, database, or volume are needed, and local environment files are excluded
+from the remote build. Discovery explicitly uses `MODEL_PROVIDER=fake`.
+
+The frontend uses the supported Next.js 15.5 line. The PostCSS override keeps its
+transitive CSS dependency patched; review it when updating Next.js.
+
+The machine stops when idle and wakes on requests, so the first visit can be slower.
+This trades availability and cold-start latency for a smaller demo footprint;
+Fly.io usage charges still apply. This is a public, fictional-data prototype, not
+a production service for sensitive child information. Notes still clear on refresh.
+
+For a separate Fly app, create it with `fly apps create <name> --org <your-org>` and
+change `app` in `fly.toml` before deploying. See the
+[Fly deployment documentation](https://fly.io/docs/launch/deploy/).
+
 ## Project map
 
 - `backend/app/compare.py` — evidence evaluation and follow-up questions.
