@@ -23,6 +23,9 @@ verify it. Another parent's experience supplies context but cannot resolve a
 requirement. No personal admission probabilities are generated in the comparison
 workflow. The `/discover` prototype still uses fictional seed data.
 
+Do not enter identifying child details. The family context is sent to OpenRouter for
+the live research request and is not stored by this app.
+
 The original LangGraph discovery prototype remains at `/discover` and
 `POST /invoke`. It still uses the original placeholder scoring and data.
 

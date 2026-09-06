@@ -284,7 +284,7 @@ export default function HomePage() {
     </div>}
     <aside className="notice" style={!editing ? { marginTop: 24 } : undefined}>
       <strong>Live research workspace</strong>
-      Enter real Singapore primary-school names. The comparison searches public web sources through OpenRouter and shows source leads for you to verify with each school. No admission odds are predicted.
+      Enter real Singapore primary-school names. The comparison searches public web sources through OpenRouter and shows source leads for you to verify with each school. Do not include identifying child details; your context is sent to OpenRouter for this request and is not stored by this app. No admission odds are predicted.
     </aside>
 
     {!catalogue && <div className="panel empty" role="status">

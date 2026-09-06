@@ -286,8 +286,8 @@ def test_api_catalogue_and_comparison_exact_contract_and_no_model_calls(client, 
     assert data == get_catalogue().model_dump(mode="json")
     assert [topic["id"] for topic in data["topics"]] == TOPICS
     assert all(set(topic) == {"id", "label", "description", "question"} for topic in data["topics"])
-    assert all(school["is_demo"] is True for school in data["schools"])
-    assert "fictional" in data["notice"].lower()
+    assert data["schools"] == []
+    assert "real" in data["notice"].lower()
 
     response = client.post("/compare", json=payload(observations=[observation(outcome="unclear")], school_ids=[SECOND, FIRST]))
     assert response.status_code == 200 and response.headers["cache-control"] == "no-store"
