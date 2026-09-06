@@ -988,10 +988,10 @@
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 410px;
+  grid-template-columns: minmax(0, 1fr) minmax(310px, 390px);
   align-items: center;
-  gap: 64px;
-  min-height: 390px;
+  gap: 54px;
+  min-height: 330px;
   margin-bottom: 34px;
 }
 
@@ -1018,8 +1018,8 @@
 .hero h1 {
   max-width: 650px;
   margin-bottom: 18px;
-  font-size: clamp(44px, 5.7vw, 74px);
-  line-height: .98;
+  font-size: clamp(42px, 5vw, 66px);
+  line-height: 1.02;
 }
 
 .hero p:not(.heroEyebrow) {
@@ -1029,39 +1029,54 @@
   line-height: 1.65;
 }
 
-.heroVisual {
-  position: relative;
-  min-height: 365px;
-  overflow: hidden;
-  border-radius: 130px 130px 24px 24px;
-  background: #dfe9e2;
-  box-shadow: 0 24px 58px rgb(39 62 54 / 17%);
+.heroGuide {
+  border: 1px solid #cad9d0;
+  border-radius: 18px;
+  padding: 24px;
+  background: #edf4ef;
+  box-shadow: 0 16px 36px rgb(31 51 45 / 8%);
 }
 
-.heroVisual img {
-  object-fit: cover;
-  object-position: 53% center;
+.guideLabel {
+  margin: 0 0 16px !important;
+  color: var(--navy) !important;
+  font-size: 13px !important;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 
-.heroBadge {
-  position: absolute;
-  left: 18px;
-  bottom: 18px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 13px 15px;
-  border: 1px solid rgb(23 48 71 / 8%);
-  border-radius: 15px;
-  color: var(--teal-dark);
-  background: rgb(255 253 248 / 94%);
-  box-shadow: 0 12px 30px rgb(23 48 71 / 15%);
-  backdrop-filter: blur(8px);
+.guideList {
+  display: grid;
+  gap: 16px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
 }
 
-.heroBadge span { display: grid; gap: 2px; }
-.heroBadge strong { color: var(--navy); font-size: 13px; }
-.heroBadge small { color: #718087; font-size: 11px; }
+.guideList li {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.guideList li > span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--navy);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.guideList strong,
+.guideList small { display: block; }
+.guideList strong { color: var(--navy); font-size: 14px; }
+.guideList small { margin-top: 2px; color: var(--ink-soft); font-size: 12.5px; line-height: 1.45; }
 
 .notice {
   margin-bottom: 24px;
@@ -1172,7 +1187,7 @@
 
 @media (max-width: 860px) {
   .hero { grid-template-columns: 1fr; gap: 28px; }
-  .heroVisual { min-height: 420px; width: min(100%, 620px); }
+  .heroGuide { width: min(100%, 620px); }
 }
 
 @media (max-width: 640px) {
@@ -1182,6 +1197,6 @@
   .main { padding: 24px 14px 44px; }
   .hero { min-height: auto; margin-bottom: 26px; }
   .hero h1 { font-size: clamp(40px, 13vw, 58px); }
-  .heroVisual { min-height: 330px; border-radius: 95px 95px 20px 20px; }
+  .heroGuide { padding: 20px; }
   .step { padding: 20px 17px; border-radius: 18px; }
 }
