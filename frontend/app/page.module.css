@@ -1,62 +1,63 @@
 /*
-  Base palette keeps the live deployment's brand anchors (teal #145c55, ink
-  #193139) but warms the neutrals and adds a terracotta accent so the page
-  reads as considered/human rather than a stock SaaS gray-green — this is a
-  big, emotional decision for parents, not just a form to fill in. Headings
-  use Fraunces (warm editorial serif, see the font import in page.tsx) for
-  the one distinctive typographic move; body/form text stays on a plain
-  system sans so dense fields and tables stay effortlessly readable.
+  Brand redesign per the reference moodboard: Navy (trust) / Sage (growth) /
+  Teal (balance) / Sand (calm) / Blush (warmth), Inter throughout, and a
+  softer, more rounded UI than the previous pass. Functionality is
+  unchanged from before — this file only reskins it.
 */
 
 .page {
-  --bg-top: #fdf9f1;
-  --bg-mid: #f8f2e6;
-  --bg-bottom: #f2ead9;
-  --surface: #fffdf9;
-  --ink: #1f2a24;
-  --ink-soft: #63705f;
-  --teal: #145c55;
-  --teal-dark: #0e433e;
-  --teal-tint: #e6f0ee;
-  --border: #e2dac8;
-  --radius-lg: 16px;
-  --radius-md: 12px;
-  --radius-sm: 8px;
+  --navy: #1e3a52;
+  --navy-dark: #142a3c;
+  --navy-tint: #e6ecf0;
+  --sage: #7a9a78;
+  --sage-dark: #5c7c5a;
+  --sage-tint: #e9f1e8;
+  --teal: #4f9a95;
+  --teal-dark: #386f6b;
+  --teal-tint: #e3f1ef;
+  --sand: #e6d9bb;
+  --sand-light: #f6f1e5;
+  --blush: #e7a79e;
+  --blush-dark: #b56258;
+  --blush-tint: #fbebe8;
 
-  --inset-bg: #f3ecdd;
-  --warm-accent: #b85c3a;
-  --warm-accent-dark: #954a2e;
-  --warm-accent-tint: #f6e6dd;
-  --warm-accent-border: #e8c3ac;
+  --surface: #ffffff;
+  --ink: #22303a;
+  --ink-soft: #667079;
+  --border: #e3dcc9;
+  --inset-bg: #f3ede0;
+  --radius-lg: 22px;
+  --radius-md: 16px;
+  --radius-sm: 11px;
 
-  --amber-bg: #fdf6e8;
-  --amber-border: #eeddb0;
-  --amber-ink: #7a5b12;
+  --amber-bg: #f6ecd4;
+  --amber-border: #e2cc9b;
+  --amber-ink: #7d6224;
 
-  --danger-bg: #fdecea;
-  --danger-border: #f3c2bc;
-  --danger-ink: #8a2f26;
+  --danger-bg: var(--blush-tint);
+  --danger-border: #ecc0b9;
+  --danger-ink: var(--blush-dark);
 
-  --success-bg: #eaf6ec;
-  --success-border: #bfe3c6;
-  --success-ink: #1f6b34;
+  --success-bg: var(--sage-tint);
+  --success-border: #cfe1cd;
+  --success-ink: var(--sage-dark);
 
-  --unclear-bg: #f1f2f0;
-  --unclear-border: #dcdfdb;
-  --unclear-ink: #5a6b70;
+  --unclear-bg: var(--sand-light);
+  --unclear-border: var(--border);
+  --unclear-ink: var(--ink-soft);
 
-  background: radial-gradient(ellipse 1200px 700px at 15% -10%, var(--bg-top) 0%, var(--bg-mid) 55%, var(--bg-bottom) 100%) fixed;
+  background: var(--sand-light);
   color: var(--ink);
   min-height: 100vh;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-inter), -apple-system, "Segoe UI", sans-serif;
 }
 
 .page :global(h1),
 .page :global(h2),
 .page :global(h3) {
-  font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--navy);
 }
 
 .pageWithBar {
@@ -73,16 +74,17 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px;
-  background: rgba(253, 249, 241, 0.88);
+  background: rgba(246, 241, 229, 0.9);
   backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--border);
 }
 
 .brand {
   font-size: 18px;
-  font-weight: 700;
-  color: var(--ink);
+  font-weight: 800;
+  color: var(--navy);
   text-decoration: none;
+  letter-spacing: -0.02em;
 }
 
 .nav {
@@ -91,7 +93,7 @@
 }
 
 .navLink {
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: 999px;
   font-size: 14px;
   font-weight: 600;
@@ -100,8 +102,8 @@
 }
 
 .navLinkActive {
-  color: var(--teal-dark);
-  background: var(--teal-tint);
+  color: var(--sage-dark);
+  background: var(--sage-tint);
 }
 
 /* ---------- hero ---------- */
@@ -113,10 +115,10 @@
 }
 
 .hero h1 {
-  font-size: clamp(28px, 4vw, 36px);
-  line-height: 1.15;
+  font-size: clamp(28px, 4vw, 38px);
+  line-height: 1.12;
   margin: 0 0 10px;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 .hero p {
@@ -129,13 +131,13 @@
 /* condensed trust notice: one line + expandable detail, instead of a large
    permanently-open block competing with the form for attention */
 .notice {
-  border: 1px solid var(--amber-border);
-  background: var(--amber-bg);
+  border: 1px solid var(--border);
+  background: var(--sand);
   border-radius: var(--radius-md);
   padding: 12px 16px;
   margin-bottom: 28px;
   font-size: 14px;
-  color: var(--amber-ink);
+  color: var(--navy-dark);
 }
 
 .notice summary {
@@ -151,21 +153,21 @@
   display: none;
 }
 
-.notice summary::before {
-  content: "\24D8"; /* circled i */
-  font-weight: 700;
+.notice summary svg {
+  flex: none;
+  color: var(--navy);
 }
 
 .notice p {
   margin: 8px 0 0;
-  color: var(--amber-ink);
+  color: var(--navy-dark);
   line-height: 1.5;
 }
 
 .inlineNotice {
-  border: 1px solid var(--amber-border);
-  background: var(--amber-bg);
-  color: var(--amber-ink);
+  border: 1px solid var(--border);
+  background: var(--sand);
+  color: var(--navy-dark);
   border-radius: var(--radius-md);
   padding: 10px 14px;
   font-size: 13.5px;
@@ -191,6 +193,7 @@
   border-radius: var(--radius-lg);
   padding: 24px;
   margin-bottom: 20px;
+  box-shadow: 0 1px 2px rgba(30, 58, 82, 0.04);
 }
 
 .stepHead {
@@ -202,11 +205,11 @@
 
 .stepNum {
   flex: none;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 999px;
-  background: var(--teal-tint);
-  color: var(--teal-dark);
+  background: var(--sage);
+  color: #fff;
   font-weight: 700;
   font-size: 14px;
   display: flex;
@@ -251,7 +254,7 @@
 .field select {
   width: 100%;
   box-sizing: border-box;
-  padding: 11px 12px;
+  padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 15px;
@@ -263,9 +266,9 @@
 .field input:focus,
 .field textarea:focus,
 .field select:focus {
-  outline: 2px solid var(--teal);
+  outline: 2px solid var(--sage);
   outline-offset: 1px;
-  border-color: var(--teal);
+  border-color: var(--sage);
 }
 
 .field textarea {
@@ -313,14 +316,38 @@
 }
 
 .priorityCardActive {
-  border-color: var(--teal);
-  background: var(--teal-tint);
+  border-color: var(--sage);
+  background: var(--sage-tint);
+}
+
+.priorityTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 2px;
+}
+
+.priorityIcon {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--sand);
+  color: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.priorityCardActive .priorityIcon {
+  background: var(--sage);
+  color: #fff;
 }
 
 .priorityTitle {
   font-size: 14.5px;
   font-weight: 700;
-  margin: 0 0 2px;
+  margin: 0;
 }
 
 .priorityDesc {
@@ -353,12 +380,12 @@
 }
 
 .segmentBtnActiveMust {
-  background: var(--teal);
+  background: var(--navy);
   color: #fff;
 }
 
 .segmentBtnActivePref {
-  background: var(--ink);
+  background: var(--teal);
   color: #fff;
 }
 
@@ -414,7 +441,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 14px 24px;
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(6px);
   border-top: 1px solid var(--border);
 }
@@ -431,11 +458,11 @@
 }
 
 .actionSummary strong {
-  color: var(--ink);
+  color: var(--navy);
 }
 
 .primaryBtn {
-  background: var(--teal);
+  background: var(--sage);
   color: #fff;
   border: none;
   border-radius: 999px;
@@ -447,18 +474,18 @@
 }
 
 .primaryBtn:disabled {
-  background: #a9b6b4;
+  background: #c3cec2;
   cursor: not-allowed;
 }
 
 .primaryBtn:not(:disabled):hover {
-  background: var(--teal-dark);
+  background: var(--sage-dark);
 }
 
 .secondaryBtn {
   background: var(--surface);
-  color: var(--teal-dark);
-  border: 1px solid var(--teal);
+  color: var(--navy);
+  border: 1px solid var(--navy);
   border-radius: 999px;
   padding: 10px 18px;
   font-size: 14px;
@@ -569,11 +596,11 @@
 }
 
 .assessmentUnmet {
-  border-top-color: var(--danger-ink);
+  border-top-color: var(--blush-dark);
 }
 
 .assessmentSupported {
-  border-top-color: var(--success-ink);
+  border-top-color: var(--sage-dark);
 }
 
 .assessmentEyebrow {
@@ -600,10 +627,10 @@
 /* ---------- results / topic cards ---------- */
 
 .mustHaveAlert {
-  border: 1px solid var(--warm-accent-border);
-  border-left: 4px solid var(--warm-accent);
-  background: var(--warm-accent-tint);
-  color: var(--warm-accent-dark);
+  border: 1px solid var(--danger-border);
+  border-left: 4px solid var(--blush-dark);
+  background: var(--blush-tint);
+  color: var(--blush-dark);
   border-radius: var(--radius-md);
   padding: 14px 16px;
   font-size: 14px;
@@ -614,6 +641,7 @@
 .mustHaveAlert strong {
   display: block;
   margin-bottom: 4px;
+  color: var(--navy-dark);
 }
 
 .mustHaveAlert ul {
@@ -651,6 +679,7 @@
   font-size: 16px;
   font-weight: 700;
   margin: 0;
+  color: var(--navy);
 }
 
 .topicResultMeta {
@@ -793,7 +822,7 @@
 /* ---------- observation form ---------- */
 
 .notePanel {
-  border: 2px solid var(--teal);
+  border: 2px solid var(--sage);
   scroll-margin-top: 24px;
 }
 
