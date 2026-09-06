@@ -1,0 +1,843 @@
+/*
+  Design tokens sampled from the live deployment (school-fit-comparison.fly.dev)
+  by an earlier redesign pass, kept here so the page doesn't clash with the
+  existing brand: body background #f5f7f6, ink #193139, primary button #145c55.
+  Everything else (spacing scale, status colors, the segmented control, the
+  sticky action bar, the per-priority result cards) is the redesign, extended
+  with the styling the real comparison/note-recording workflow needs.
+*/
+
+.page {
+  --bg: #f5f7f6;
+  --surface: #ffffff;
+  --ink: #193139;
+  --ink-soft: #5a6b70;
+  --teal: #145c55;
+  --teal-dark: #0e433e;
+  --teal-tint: #e6f0ee;
+  --border: #dce4e3;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+
+  --amber-bg: #fdf6e8;
+  --amber-border: #eeddb0;
+  --amber-ink: #7a5b12;
+
+  --danger-bg: #fdecea;
+  --danger-border: #f3c2bc;
+  --danger-ink: #8a2f26;
+
+  --success-bg: #eaf6ec;
+  --success-border: #bfe3c6;
+  --success-ink: #1f6b34;
+
+  --unclear-bg: #f1f2f0;
+  --unclear-border: #dcdfdb;
+  --unclear-ink: #5a6b70;
+
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.pageWithBar {
+  padding-bottom: 96px; /* room for the sticky action bar */
+}
+
+/* ---------- header ---------- */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: rgba(245, 247, 246, 0.92);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  gap: 4px;
+}
+
+.navLink {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--ink-soft);
+}
+
+.navLinkActive {
+  color: var(--teal-dark);
+  background: var(--teal-tint);
+}
+
+/* ---------- hero ---------- */
+
+.main {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 40px 20px 40px;
+}
+
+.hero h1 {
+  font-size: clamp(28px, 4vw, 36px);
+  line-height: 1.15;
+  margin: 0 0 10px;
+  letter-spacing: -0.01em;
+}
+
+.hero p {
+  font-size: 16px;
+  color: var(--ink-soft);
+  margin: 0 0 24px;
+  max-width: 60ch;
+}
+
+/* condensed trust notice: one line + expandable detail, instead of a large
+   permanently-open block competing with the form for attention */
+.notice {
+  border: 1px solid var(--amber-border);
+  background: var(--amber-bg);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  margin-bottom: 28px;
+  font-size: 14px;
+  color: var(--amber-ink);
+}
+
+.notice summary {
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notice summary::-webkit-details-marker {
+  display: none;
+}
+
+.notice summary::before {
+  content: "\24D8"; /* circled i */
+  font-weight: 700;
+}
+
+.notice p {
+  margin: 8px 0 0;
+  color: var(--amber-ink);
+  line-height: 1.5;
+}
+
+.inlineNotice {
+  border: 1px solid var(--amber-border);
+  background: var(--amber-bg);
+  color: var(--amber-ink);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 13.5px;
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.errorText {
+  color: var(--danger-ink);
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 13.5px;
+  margin: 0 0 14px;
+}
+
+/* ---------- step cards ---------- */
+
+.step {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.stepHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.stepNum {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--teal-tint);
+  color: var(--teal-dark);
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stepHead h2 {
+  font-size: 19px;
+  margin: 0 0 4px;
+}
+
+.stepHead p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.schoolGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .schoolGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--ink);
+}
+
+.field input,
+.field textarea,
+.field select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-family: inherit;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus {
+  outline: 2px solid var(--teal);
+  outline-offset: 1px;
+  border-color: var(--teal);
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.concernField {
+  margin-top: 16px;
+}
+
+.fieldPair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 640px) {
+  .fieldPair {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- priorities ---------- */
+
+.priorityGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .priorityGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.priorityCard {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  background: var(--surface);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.priorityCardActive {
+  border-color: var(--teal);
+  background: var(--teal-tint);
+}
+
+.priorityTitle {
+  font-size: 14.5px;
+  font-weight: 700;
+  margin: 0 0 2px;
+}
+
+.priorityDesc {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+/* three-way segmented control: replaces the old checkbox + dropdown pair
+   with a single click */
+.segment {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px;
+  background: var(--bg);
+  gap: 2px;
+}
+
+.segmentBtn {
+  border: none;
+  background: transparent;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--ink-soft);
+}
+
+.segmentBtnActiveMust {
+  background: var(--teal);
+  color: #fff;
+}
+
+.segmentBtnActivePref {
+  background: var(--ink);
+  color: #fff;
+}
+
+.priorityDetail {
+  margin-top: 10px;
+}
+
+.priorityDetail textarea,
+.priorityDetail input {
+  margin-top: 6px;
+  font-size: 13.5px;
+}
+
+.priorityDetail label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.priorityDetail textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  resize: vertical;
+  min-height: 56px;
+  color: var(--ink);
+}
+
+.priorityDetail input[type="number"] {
+  width: 100px;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  color: var(--ink);
+}
+
+/* ---------- sticky action bar ---------- */
+
+.actionBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 24px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(6px);
+  border-top: 1px solid var(--border);
+}
+
+.actionBarButtons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.actionSummary {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+}
+
+.actionSummary strong {
+  color: var(--ink);
+}
+
+.primaryBtn {
+  background: var(--teal);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.primaryBtn:disabled {
+  background: #a9b6b4;
+  cursor: not-allowed;
+}
+
+.primaryBtn:not(:disabled):hover {
+  background: var(--teal-dark);
+}
+
+.secondaryBtn {
+  background: var(--surface);
+  color: var(--teal-dark);
+  border: 1px solid var(--teal);
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.secondaryBtn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.textBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--teal-dark);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.textBtn.danger {
+  color: var(--danger-ink);
+}
+
+/* ---------- empty / loading catalogue ---------- */
+
+.emptyState {
+  padding: 36px;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+/* ---------- results: workspace header ---------- */
+
+.workspaceHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin: 8px 0 20px;
+  flex-wrap: wrap;
+}
+
+.workspaceHeading h1 {
+  font-size: 26px;
+  margin: 0;
+}
+
+.contextBlock {
+  padding-left: 16px;
+  border-left: 3px solid var(--teal);
+  margin-bottom: 20px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.contextLabel {
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin: 0 0 4px;
+}
+
+.changesBanner {
+  background: var(--success-bg);
+  border: 1px solid var(--success-border);
+  color: var(--success-ink);
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.changesBanner ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
+/* ---------- assessment cards ---------- */
+
+.assessmentGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 640px) {
+  .assessmentGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.assessmentCard {
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--teal);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: 18px;
+}
+
+.assessmentUnmet {
+  border-top-color: var(--danger-ink);
+}
+
+.assessmentSupported {
+  border-top-color: var(--success-ink);
+}
+
+.assessmentEyebrow {
+  text-transform: uppercase;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin: 0 0 6px;
+}
+
+.assessmentCard h3 {
+  font-size: 17px;
+  margin: 0 0 8px;
+}
+
+.assessmentSummary {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  margin: 10px 0 0;
+  line-height: 1.5;
+}
+
+/* ---------- results / topic cards ---------- */
+
+.mustHaveAlert {
+  border: 1px solid var(--amber-border);
+  background: var(--amber-bg);
+  color: var(--amber-ink);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  font-size: 14px;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.mustHaveAlert strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.mustHaveAlert ul {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+
+.topicResult {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.topicResultHead {
+  margin-bottom: 4px;
+}
+
+.topicResultTitle {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.topicResultMeta {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin: 2px 0 14px;
+  white-space: pre-wrap;
+}
+
+.findingGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .findingGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.findingCol {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+}
+
+.findingSchoolName {
+  font-size: 12.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ink-soft);
+  margin: 0 0 8px;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+
+.badgeMeets {
+  background: var(--success-bg);
+  border: 1px solid var(--success-border);
+  color: var(--success-ink);
+}
+
+.badgePartial {
+  background: var(--amber-bg);
+  border: 1px solid var(--amber-border);
+  color: var(--amber-ink);
+}
+
+.badgeMissing {
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  color: var(--danger-ink);
+}
+
+.badgeUnclear {
+  background: var(--unclear-bg);
+  border: 1px solid var(--unclear-border);
+  color: var(--unclear-ink);
+}
+
+.findingExplanation {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+
+.evidenceList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.evidenceItem {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  background: var(--bg);
+}
+
+.evidenceKind {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--teal-dark);
+  margin-bottom: 4px;
+}
+
+.evidenceMeta {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+
+.evidenceSummary {
+  font-size: 13px;
+  margin: 0 0 6px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.evidenceOutcome {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin: 0 0 4px;
+}
+
+.evidenceLinkRow {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  margin-bottom: 4px;
+}
+
+.evidenceLinkRow a {
+  color: var(--teal-dark);
+}
+
+.sourceToVerify {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+}
+
+/* ---------- observation form ---------- */
+
+.notePanel {
+  border: 2px solid var(--teal);
+  scroll-margin-top: 24px;
+}
+
+.noteHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.noteHeading h2 {
+  font-size: 19px;
+  margin: 0;
+}
+
+.noteEyebrow {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin: 0 0 4px;
+}
+
+/* ---------- follow-up questions ---------- */
+
+.questionsList {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.questionItem {
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.questionItem > div {
+  min-width: 0;
+}
+
+.questionLabel {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.questionText {
+  font-size: 14px;
+  margin: 6px 0;
+  overflow-wrap: anywhere;
+}
+
+.questionReason {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.sessionNote {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 20px 0 0;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
