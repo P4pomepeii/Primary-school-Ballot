@@ -55,17 +55,19 @@ def _strip_json_fence(content: str) -> str:
     content = content.strip()
     fenced = re.search(r"```(?:json)?\s*(.*?)\s*```", content, flags=re.IGNORECASE | re.DOTALL)
     if fenced:
-        return fenced.group(1).strip()
-    # Some providers add a short preamble despite response_format. Decode the
-    # first complete JSON value rather than requiring the whole message to be JSON.
-    for marker in ("{", "["):
-        start = content.find(marker)
-        if start >= 0:
-            try:
-                _, end = json.JSONDecoder().raw_decode(content[start:])
-                return content[start:start + end]
-            except json.JSONDecodeError:
-                continue
+        content = fenced.group(1).strip()
+    # Some providers add prose or markdown around JSON despite response_format.
+    # Scan for the first complete object/array rather than trusting the first
+    # brace, which may occur in a sentence or a code example.
+    decoder = json.JSONDecoder()
+    for start, marker in enumerate(content):
+        if marker not in "[{":
+            continue
+        try:
+            _, end = decoder.raw_decode(content[start:])
+            return content[start:start + end]
+        except json.JSONDecodeError:
+            continue
     return content
 
 
