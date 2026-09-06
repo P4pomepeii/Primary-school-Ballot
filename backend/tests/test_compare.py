@@ -451,3 +451,24 @@ def test_live_parser_accepts_school_requirement_response_shape():
 ```"""}}]}
     result = _findings(payload, request)
     assert result[("school-1-tao-nan", "quiet-space")][0].outcome == "supports"
+
+
+def test_live_parser_accepts_provider_native_requirement_groups():
+    request = ComparisonRequest.model_validate(real_payload())
+    payload = {"choices": [{"message": {"content": """<result>
+```json
+[{"id":"school-1-tao-nan","requirements":[
+  {"id":"quiet-space","finding_type":"supports","finding":{"source_url":"https://example.com/tao-nan","excerpt":"A quiet space is described."}}
+]}]
+```
+</result>"""}}]}
+    result = _findings(payload, request)
+    evidence = result[("school-1-tao-nan", "quiet-space")][0]
+    assert evidence.outcome == "supports"
+    assert evidence.source_url == "https://example.com/tao-nan"
+
+
+def test_live_parser_treats_empty_provider_content_as_no_evidence():
+    request = ComparisonRequest.model_validate(real_payload())
+    payload = {"choices": [{"message": {"content": None}}]}
+    assert _findings(payload, request) == {}
