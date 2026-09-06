@@ -2,8 +2,9 @@
 
 The main workflow helps a family investigate two real schools it is already considering.
 It complements the original discovery prototype, which remains at `/discover`.
-The comparison uses one bounded OpenRouter web-research request, then applies the
-requirement logic deterministically. The discovery prototype remains separate.
+The comparison uses one bounded OpenRouter web-research request for each batch of
+uncached school names, then applies the requirement logic deterministically. The
+discovery prototype remains separate.
 
 ## Workflow
 
@@ -15,7 +16,9 @@ requirement logic deterministically. The discovery prototype remains separate.
 
 The frontend uses `/api/schools` and `/api/compare`; Next.js proxies to the backend
 with a timeout and no caching. Notes remain in page memory. The backend does not
-save requests. The family context is sent to OpenRouter for the live research request;
+save prompts or notes. Live evidence is cached by normalized school name in a
+bounded process-global cache shared by users on the same instance, and the cache
+is cleared on restart or redeploy. The family context is sent to OpenRouter for the live research request;
 do not include identifying child details. OpenRouter fetches current web results through its `openrouter:web_search`
 server tool; the backend only validates source URLs returned by the model and does
 not fetch those URLs itself.
@@ -116,11 +119,14 @@ The UI discloses exclusions before submitting edits.
 ## Extending the evidence base
 
 The original seed loader is retained only for the discovery demo. The comparison
-workflow accepts school names and researches them at request time. Programme names
+workflow accepts school names and researches uncached names at request time. Programme names
 or educator counts alone must not be treated as proof that a child's particular
 arrangement is available. Preserve the distinction between a published policy, an
 individual account, a live research lead and a confirmed arrangement.
 
-Live research is intentionally bounded to one request, at most three results per
-search and eight total search results. Set `OPENROUTER_API_KEY` and optionally
+Live research is intentionally bounded to one request per batch of new schools, at
+most three results per search and eight total search results. Once a school is in
+the process cache, changing notes or context does not call OpenRouter again. A
+requirement not covered when that school was first researched remains unknown
+rather than causing a second API call. Set `OPENROUTER_API_KEY` and optionally
 `OPENROUTER_MODEL` in the backend environment; never commit either value.
