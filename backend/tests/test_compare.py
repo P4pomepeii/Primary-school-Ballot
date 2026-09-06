@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from app import comparison_schema
 from app.compare import compare_schools, get_catalogue
 from app.comparison_schema import ComparisonRequest, ComparisonResponse, Evidence
+from app.live_research import _findings
 from app.server import app
 
 FIRST, SECOND = "riverside_ps", "hillcrest_ps"
@@ -426,3 +427,18 @@ def test_real_school_api_uses_research_pass(client, monkeypatch):
     assert called == [["Tao Nan School", "Nanyang Primary School"]]
     assert response.json()["rows"][0]["cells"][0]["status"] == "supported"
     assert response.json()["rows"][0]["cells"][0]["evidence"][0]["source_url"] == "https://example.com/tao-nan"
+
+
+def test_live_parser_accepts_provider_preamble_and_grouped_findings():
+    request = ComparisonRequest.model_validate(real_payload())
+    payload = {"choices": [{"message": {"content": """Research complete.
+```json
+[
+  {"school_id":"school-1-tao-nan","requirement_id":"quiet-space","findings":[
+    {"source_url":"https://example.com/tao-nan","excerpt":"A quiet space is described.","support":"supports"}
+  ]}
+]
+```"""}}]}
+    result = _findings(payload, request)
+    assert result[("school-1-tao-nan", "quiet-space")][0].outcome == "supports"
+    assert result[("school-1-tao-nan", "quiet-space")][0].source_url == "https://example.com/tao-nan"

@@ -6,6 +6,7 @@ import os
 import re
 from datetime import datetime
 from typing import Any
+from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -52,9 +53,20 @@ def _json_schema() -> dict[str, Any]:
 
 def _strip_json_fence(content: str) -> str:
     content = content.strip()
-    if content.startswith("```"):
-        content = re.sub(r"^```(?:json)?\s*|\s*```$", "", content, flags=re.IGNORECASE | re.DOTALL)
-    return content.strip()
+    fenced = re.search(r"```(?:json)?\s*(.*?)\s*```", content, flags=re.IGNORECASE | re.DOTALL)
+    if fenced:
+        return fenced.group(1).strip()
+    # Some providers add a short preamble despite response_format. Decode the
+    # first complete JSON value rather than requiring the whole message to be JSON.
+    for marker in ("{", "["):
+        start = content.find(marker)
+        if start >= 0:
+            try:
+                _, end = json.JSONDecoder().raw_decode(content[start:])
+                return content[start:start + end]
+            except json.JSONDecodeError:
+                continue
+    return content
 
 
 def _valid_url(value: str) -> bool:
@@ -107,9 +119,26 @@ def _extract_content(payload: dict[str, Any]) -> str:
 def _findings(payload: dict[str, Any], request: ComparisonRequest) -> dict[tuple[str, str], list[Evidence]]:
     try:
         raw = json.loads(_strip_json_fence(_extract_content(payload)))
-        findings = raw["findings"]
     except (json.JSONDecodeError, KeyError, TypeError):
         raise LiveResearchError("OpenRouter returned an invalid comparison format.") from None
+
+    # Models occasionally wrap findings by school/requirement even when the
+    # provider accepts the requested JSON schema. Flatten both that shape and the
+    # canonical {"findings": [...]} shape before applying strict validation.
+    if isinstance(raw, dict):
+        findings = raw.get("findings", [])
+    elif isinstance(raw, list):
+        findings = []
+        for group in raw:
+            if not isinstance(group, dict):
+                continue
+            nested = group.get("findings")
+            if isinstance(nested, list):
+                findings.extend({**item, "school_id": group.get("school_id"), "requirement_id": group.get("requirement_id")} for item in nested if isinstance(item, dict))
+            else:
+                findings.append(group)
+    else:
+        findings = []
     if not isinstance(findings, list):
         raise LiveResearchError("OpenRouter returned an invalid comparison format.")
 
@@ -122,10 +151,12 @@ def _findings(payload: dict[str, Any], request: ComparisonRequest) -> dict[tuple
             continue
         school_id = item.get("school_id")
         requirement_id = item.get("requirement_id")
-        outcome = item.get("outcome")
-        title = item.get("source_title")
+        outcome = item.get("outcome") or item.get("support")
+        title = item.get("source_title") or item.get("source_label")
         url = item.get("source_url")
-        excerpt = item.get("source_excerpt")
+        excerpt = item.get("source_excerpt") or item.get("excerpt")
+        if isinstance(url, str) and not title:
+            title = urlparse(url).netloc or "Public web source"
         if (
             school_id not in school_ids or requirement_id not in requirement_ids
             or outcome not in {"supports", "does_not_support", "unclear"}
