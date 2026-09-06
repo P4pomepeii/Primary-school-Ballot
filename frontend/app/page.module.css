@@ -1,24 +1,33 @@
 /*
-  Design tokens sampled from the live deployment (school-fit-comparison.fly.dev)
-  by an earlier redesign pass, kept here so the page doesn't clash with the
-  existing brand: body background #f5f7f6, ink #193139, primary button #145c55.
-  Everything else (spacing scale, status colors, the segmented control, the
-  sticky action bar, the per-priority result cards) is the redesign, extended
-  with the styling the real comparison/note-recording workflow needs.
+  Base palette keeps the live deployment's brand anchors (teal #145c55, ink
+  #193139) but warms the neutrals and adds a terracotta accent so the page
+  reads as considered/human rather than a stock SaaS gray-green — this is a
+  big, emotional decision for parents, not just a form to fill in. Headings
+  use Fraunces (warm editorial serif, see the font import in page.tsx) for
+  the one distinctive typographic move; body/form text stays on a plain
+  system sans so dense fields and tables stay effortlessly readable.
 */
 
 .page {
-  --bg: #f5f7f6;
-  --surface: #ffffff;
-  --ink: #193139;
-  --ink-soft: #5a6b70;
+  --bg-top: #fdf9f1;
+  --bg-mid: #f8f2e6;
+  --bg-bottom: #f2ead9;
+  --surface: #fffdf9;
+  --ink: #1f2a24;
+  --ink-soft: #63705f;
   --teal: #145c55;
   --teal-dark: #0e433e;
   --teal-tint: #e6f0ee;
-  --border: #dce4e3;
+  --border: #e2dac8;
   --radius-lg: 16px;
   --radius-md: 12px;
   --radius-sm: 8px;
+
+  --inset-bg: #f3ecdd;
+  --warm-accent: #b85c3a;
+  --warm-accent-dark: #954a2e;
+  --warm-accent-tint: #f6e6dd;
+  --warm-accent-border: #e8c3ac;
 
   --amber-bg: #fdf6e8;
   --amber-border: #eeddb0;
@@ -36,10 +45,18 @@
   --unclear-border: #dcdfdb;
   --unclear-ink: #5a6b70;
 
-  background: var(--bg);
+  background: radial-gradient(ellipse 1200px 700px at 15% -10%, var(--bg-top) 0%, var(--bg-mid) 55%, var(--bg-bottom) 100%) fixed;
   color: var(--ink);
   min-height: 100vh;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.page :global(h1),
+.page :global(h2),
+.page :global(h3) {
+  font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .pageWithBar {
@@ -56,7 +73,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px;
-  background: rgba(245, 247, 246, 0.92);
+  background: rgba(253, 249, 241, 0.88);
   backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--border);
 }
@@ -320,7 +337,7 @@
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 2px;
-  background: var(--bg);
+  background: var(--inset-bg);
   gap: 2px;
 }
 
@@ -547,6 +564,8 @@
   border-radius: var(--radius-md);
   background: var(--surface);
   padding: 18px;
+  opacity: 0;
+  animation: revealUp 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both;
 }
 
 .assessmentUnmet {
@@ -581,9 +600,10 @@
 /* ---------- results / topic cards ---------- */
 
 .mustHaveAlert {
-  border: 1px solid var(--amber-border);
-  background: var(--amber-bg);
-  color: var(--amber-ink);
+  border: 1px solid var(--warm-accent-border);
+  border-left: 4px solid var(--warm-accent);
+  background: var(--warm-accent-tint);
+  color: var(--warm-accent-dark);
   border-radius: var(--radius-md);
   padding: 14px 16px;
   font-size: 14px;
@@ -607,6 +627,20 @@
   background: var(--surface);
   padding: 20px;
   margin-bottom: 16px;
+  opacity: 0;
+  animation: revealUp 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .assessmentCard, .topicResult {
+    animation: none;
+    opacity: 1;
+  }
 }
 
 .topicResultHead {
@@ -706,7 +740,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
-  background: var(--bg);
+  background: var(--inset-bg);
 }
 
 .evidenceKind {
