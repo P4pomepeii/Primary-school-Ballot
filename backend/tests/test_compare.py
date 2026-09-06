@@ -5,7 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-from app import comparison_schema
+from app import comparison_schema, server
 from app.compare import compare_schools, get_catalogue
 from app.comparison_schema import ComparisonRequest, ComparisonResponse, Evidence
 from app.live_research import _findings
@@ -49,6 +49,15 @@ def compare(requirements=None, observations=None, **changes):
 def client():
     with TestClient(app) as test_client:
         yield test_client
+
+
+@pytest.fixture(autouse=True)
+def clear_live_school_cache():
+    with server._live_cache_lock:
+        server._live_school_cache.clear()
+    yield
+    with server._live_cache_lock:
+        server._live_school_cache.clear()
 
 
 def test_demo_never_resolves_any_topic_or_fabricates_dates():
@@ -417,7 +426,7 @@ def test_real_school_api_uses_research_pass(client, monkeypatch):
     )
     called = []
 
-    def fake_research(received):
+    def fake_research(received, **kwargs):
         called.append(received.school_names)
         return {("school-1-tao-nan", "quiet-space"): [evidence]}
 
@@ -430,7 +439,10 @@ def test_real_school_api_uses_research_pass(client, monkeypatch):
 
 
 def test_real_school_api_reuses_live_research_when_notes_change(client, monkeypatch):
-    request = real_payload(context="Cache behavior walkthrough")
+    request = real_payload(
+        context="Cache behavior walkthrough",
+        school_ids=["family-a-tao-nan", "family-a-nanyang"],
+    )
     evidence = Evidence(
         id="live:source", source_type="published_information", source_label="Live web research — School page",
         source_url="https://example.com/tao-nan", observed_on="2026-09-06",
@@ -439,21 +451,57 @@ def test_real_school_api_reuses_live_research_when_notes_change(client, monkeypa
     )
     calls = []
 
-    def fake_research(received):
+    def fake_research(received, **kwargs):
         calls.append(received.observations)
-        return {("school-1-tao-nan", "quiet-space"): [evidence]}
+        selected_school_ids = kwargs["school_ids"]
+        return {(selected_school_ids[0], "quiet-space"): [evidence]}
 
     monkeypatch.setattr("app.server.research_schools", fake_research)
     first = client.post("/compare", json=request)
     second = client.post("/compare", json={
         **request,
+        "school_ids": ["family-b-tao-nan", "family-b-nanyang"],
         "observations": [observation(
-            school_id="school-1-tao-nan", requirement_id="quiet-space",
+            school_id="family-b-tao-nan", requirement_id="quiet-space",
         )],
     })
     assert first.status_code == second.status_code == 200
     assert len(calls) == 1
     assert second.json()["rows"][0]["cells"][0]["evidence"][0]["source_type"] == "school_response"
+
+
+def test_real_school_api_researches_only_new_school(client, monkeypatch):
+    evidence = Evidence(
+        id="live:source", source_type="published_information", source_label="Live web research — School page",
+        source_url="https://example.com/school", observed_on="2026-09-06",
+        summary="The source describes the arrangement.", outcome="supports",
+        commute_minutes=None, is_demo=False,
+    )
+    calls = []
+
+    def fake_research(received, **kwargs):
+        selected_school_ids = kwargs["school_ids"]
+        calls.append(selected_school_ids)
+        return {
+            (school_id, "quiet-space"): [evidence.model_copy(update={"id": f"live:{school_id}"})]
+            for school_id in selected_school_ids
+        }
+
+    monkeypatch.setattr("app.server.research_schools", fake_research)
+    first = client.post("/compare", json=real_payload())
+    second = client.post("/compare", json=real_payload(
+        school_ids=["school-1-tao-nan", "school-3-new-school"],
+        school_names=["Tao Nan School", "New School"],
+        context="A different family's context.",
+    ))
+
+    assert first.status_code == second.status_code == 200
+    assert calls == [
+        ["school-1-tao-nan", "school-2-nanyang"],
+        ["school-3-new-school"],
+    ]
+    assert second.json()["rows"][0]["cells"][0]["status"] == "supported"
+    assert second.json()["rows"][0]["cells"][1]["status"] == "supported"
 
 
 def test_live_parser_accepts_provider_preamble_and_grouped_findings():
